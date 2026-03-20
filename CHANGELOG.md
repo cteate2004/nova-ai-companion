@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0] - 2026-03-19
+
+### Added
+- `start.bat` one-click Windows launcher:
+  - Checks for `.env` configuration
+  - Auto-installs dependencies if missing
+  - Starts backend and frontend in minimized windows
+  - Opens browser automatically after 4-second warm-up
+  - Graceful shutdown on keypress
+- Finalized training manual with complete documentation
+- Finalized README with full setup and usage instructions
+
 ## [0.3.0] - 2026-03-19
 
 ### Added

@@ -46,7 +46,35 @@ Open http://localhost:5173 in Chrome or Edge.
 
 ## 2. Chatting with Nova
 
-*(Coming in Group 2 — Avatar + UI)*
+### Opening the Chat Panel
+- Click the **"💬 Chat"** button in the top-right corner
+- The chat panel slides in from the right side
+
+### Sending Messages
+1. Type your message in the input field at the bottom of the chat panel
+2. Press **Enter** or click **Send**
+3. Nova's response streams in real-time — you'll see it appear word by word
+
+### Example Conversations
+
+**Casual greeting:**
+> **You:** Hey Nova, how's it going?
+>
+> **Nova:** Hey you! 😊 I'm good — always happy when you show up. What's going on today?
+
+**Asking for help:**
+> **You:** I'm stuck on a networking issue at work
+>
+> **Nova:** Okay, tell me what's happening. What kind of networking issue — routing, DNS, firewall stuff? Let's figure it out together.
+
+**Just chatting:**
+> **You:** I just finished a big project at work
+>
+> **Nova:** Look at you! 🔥 Okay I see you. Tell me everything — what was the project?
+
+### Closing the Chat Panel
+- Click the **✕** button in the panel header
+- The panel slides away, leaving the avatar view clean
 
 ## 3. Voice Interaction
 
@@ -54,7 +82,23 @@ Open http://localhost:5173 in Chrome or Edge.
 
 ## 4. Nova's Emotions
 
-*(Coming in Group 2 — Avatar + UI)*
+Nova's avatar changes expression based on the tone of her response. Here's what each emotion looks like:
+
+| Emotion | Avatar Changes |
+|---------|---------------|
+| **Neutral** | Relaxed expression, gentle smile, idle animations |
+| **Happy** | Wide smile with a hint of teeth, eyes crinkle, cheeks flush |
+| **Excited** | Big smile, bright eyes, enhanced glow |
+| **Flirty** | Half-lidded eyes, one-sided smirk, subtle blush, eyebrow raise |
+| **Thoughtful** | Eyes glance sideways, one eyebrow raised, sparkles near temple |
+| **Concerned** | Eyebrows knit together, slight frown, softened eyes |
+| **Laughing** | Eyes squint closed, wide open smile, slight head shake |
+
+### Idle Animations (always active)
+- **Breathing:** Subtle shoulder/body rise and fall
+- **Blinking:** Random blinks every 2-6 seconds
+- **Hair sway:** Gentle movement of hair strands
+- **Glow:** Soft teal glow pulses around Nova
 
 ## 5. Memory System
 

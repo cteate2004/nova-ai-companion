@@ -1,0 +1,127 @@
+import { useState, useCallback, useEffect, useRef } from 'react';
+
+const SESSION_KEY = 'nova_session_id';
+
+function getSessionId() {
+  let id = localStorage.getItem(SESSION_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(SESSION_KEY, id);
+  }
+  return id;
+}
+
+export default function useChat() {
+  const [messages, setMessages] = useState([]);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [currentEmotion, setCurrentEmotion] = useState('neutral');
+  const [connected, setConnected] = useState(false);
+  const sessionId = useRef(getSessionId());
+
+  // Check backend health on mount
+  useEffect(() => {
+    fetch('/api/health')
+      .then(r => r.json())
+      .then(() => setConnected(true))
+      .catch(() => setConnected(false));
+  }, []);
+
+  // Load history on mount
+  useEffect(() => {
+    fetch(`/api/history/${sessionId.current}`)
+      .then(r => r.json())
+      .then(history => {
+        if (history.length > 0) {
+          setMessages(history.map(m => ({
+            role: m.role,
+            content: m.content,
+          })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const sendMessage = useCallback(async (text) => {
+    if (!text.trim() || isStreaming) return;
+
+    const userMsg = { role: 'user', content: text.trim() };
+    setMessages(prev => [...prev, userMsg]);
+    setIsStreaming(true);
+
+    // Add placeholder for assistant response
+    setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text.trim(),
+          session_id: sessionId.current,
+        }),
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.done) {
+              if (data.emotion) setCurrentEmotion(data.emotion);
+            } else {
+              setMessages(prev => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last && last.role === 'assistant') {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    content: last.content + data.text,
+                  };
+                }
+                return updated;
+              });
+            }
+          } catch {}
+        }
+      }
+
+      setConnected(true);
+    } catch (err) {
+      console.error('Chat error:', err);
+      setConnected(false);
+      setMessages(prev => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last && last.role === 'assistant' && !last.content) {
+          updated[updated.length - 1] = {
+            ...last,
+            content: 'Sorry, I couldn\'t connect. Make sure the backend is running.',
+          };
+        }
+        return updated;
+      });
+    } finally {
+      setIsStreaming(false);
+    }
+  }, [isStreaming]);
+
+  return {
+    messages,
+    sendMessage,
+    isStreaming,
+    currentEmotion,
+    connected,
+    sessionId: sessionId.current,
+  };
+}

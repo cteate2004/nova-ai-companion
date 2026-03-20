@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0] - 2026-03-19
+
+### Added
+- React frontend with Vite dev server (localhost:5173)
+- SVG avatar with Polynesian/Samoan-inspired features:
+  - Warm brown skin, deep brown eyes, full lips, wavy dark hair
+  - Plumeria flower behind right ear
+  - Layered gradients for depth and dimension
+- 7 emotional states: neutral, happy, excited, flirty, thoughtful, concerned, laughing
+- Idle micro-animations: breathing, random blinking, hair sway, glow pulse
+- CSS transitions (400ms) between all emotion states
+- Chat panel with glass-morphism design (collapsible sidebar)
+- SSE streaming hook for real-time message display
+- Chat bubbles with dark theme styling
+- Status bar showing connection state and current emotion
+- Vite proxy config (/api → backend on port 8000)
+- Updated training manual with chat instructions and emotion guide
+
 ## [0.1.0] - 2026-03-19
 
 ### Added

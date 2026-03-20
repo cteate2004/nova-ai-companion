@@ -28,8 +28,8 @@ A personal AI companion app with an animated avatar, voice interaction, and pers
 
 1. Clone the repo:
    ```
-   git clone <your-repo-url>
-   cd ai-companion
+   git clone https://github.com/cteate2004/nova-ai-companion.git
+   cd nova-ai-companion
    ```
 
 2. Configure your API key:
@@ -87,3 +87,24 @@ ai-companion/
 | GET | /api/history/:session_id | Get last 50 messages |
 | GET | /api/memory | Get stored memories |
 | GET | /api/health | Server health check |
+
+## Current Status (v1.0.1)
+
+All core features are built and working:
+
+- [x] Backend: Express + Claude SSE streaming + SQLite memory
+- [x] Frontend: React + Vite with proxy to backend
+- [x] SVG Avatar: 7 emotion states + idle animations (breathing, blinking, hair sway)
+- [x] Chat Panel: Glass-morphism sidebar with streaming display
+- [x] Voice: Push-to-talk (spacebar/mic) + TTS with sentence chunking
+- [x] Particle Background: Canvas bokeh with teal/gold particles
+- [x] Memory System: Fact extraction every 20 messages
+- [x] Windows Launcher: start.bat with auto-install and graceful shutdown
+- [x] TTS Fix: Async voice loading, Chrome 15s bug workaround, emotion tag stripping
+
+### Known Areas for Future Improvement
+- Avatar SVG could be refined for more visual detail/polish
+- Add more granular mouth animation synced to speech
+- Add settings panel (voice selection, TTS on/off, theme)
+- Mobile responsive layout
+- Session management UI (switch/delete sessions)

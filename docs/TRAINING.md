@@ -163,3 +163,6 @@ http://localhost:8000/api/memory
 | Backend won't start | Run `cd backend && npm install` to reinstall dependencies |
 | Frontend won't start | Run `cd frontend && npm install` to reinstall dependencies |
 | Port already in use | Kill existing processes: `taskkill /f /im node.exe` and restart |
+| No voice output (TTS) | Click anywhere on the page first (autoplay policy requires interaction), then send a message. Check console for `[Voice] Selected TTS voice:` log |
+| TTS cuts off mid-sentence | This is the Chrome 15s bug — already mitigated by sentence chunking. If it persists, try shorter messages |
+| Wrong voice / robotic voice | Open console (F12) and check which voice was selected. Windows "Zira" is preferred. You can install more voices via Windows Settings > Time & Language > Speech |

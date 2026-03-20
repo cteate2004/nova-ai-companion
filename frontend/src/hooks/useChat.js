@@ -1,5 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 
+// Strip emotion JSON tag from end of message
+function stripEmotionTag(text) {
+  return text.replace(/\s*\{"emotion":\s*"\w+"\}\s*$/, '').trim();
+}
+
 const SESSION_KEY = 'nova_session_id';
 
 function getSessionId() {
@@ -79,6 +84,18 @@ export default function useChat() {
             const data = JSON.parse(line.slice(6));
             if (data.done) {
               if (data.emotion) setCurrentEmotion(data.emotion);
+              // Strip emotion tag from the accumulated message
+              setMessages(prev => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last && last.role === 'assistant') {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    content: stripEmotionTag(last.content),
+                  };
+                }
+                return updated;
+              });
             } else {
               setMessages(prev => {
                 const updated = [...prev];

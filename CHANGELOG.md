@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.1] - 2026-03-19
+
+### Fixed
+- TTS voice loading: now waits for `voiceschanged` event before selecting a voice (fixes Chrome async voice loading)
+- Chrome 15-second TTS bug: long responses are now chunked into sentences before speaking
+- Autoplay policy: TTS only fires after user has interacted with the page (click or keypress)
+- Emotion JSON tag (`{"emotion": "happy"}`) is now stripped from both displayed chat text and TTS output
+- Better female voice selection: added "female" keyword fallback and second-voice-in-list heuristic
+
 ## [1.0.0] - 2026-03-19
 
 ### Added

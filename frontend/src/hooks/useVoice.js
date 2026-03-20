@@ -4,9 +4,25 @@ const SpeechRecognition = typeof window !== 'undefined'
   ? (window.SpeechRecognition || window.webkitSpeechRecognition)
   : null;
 
+// Strip emotion JSON tag that Claude appends
+function stripEmotionTag(text) {
+  return text.replace(/\s*\{"emotion":\s*"\w+"\}\s*$/, '').trim();
+}
+
+// Load voices asynchronously — Chrome fires voiceschanged after first call
+function getVoices() {
+  return new Promise(resolve => {
+    const voices = speechSynthesis.getVoices();
+    if (voices.length > 0) return resolve(voices);
+    speechSynthesis.addEventListener('voiceschanged', () => {
+      resolve(speechSynthesis.getVoices());
+    }, { once: true });
+  });
+}
+
 // Pick the best available female English voice
-function pickVoice() {
-  const voices = speechSynthesis.getVoices();
+async function pickVoice() {
+  const voices = await getVoices();
   const preferred = ['Zira', 'Hazel', 'Susan', 'Jenny', 'Aria'];
 
   for (const name of preferred) {
@@ -14,9 +30,13 @@ function pickVoice() {
     if (match) return match;
   }
 
-  // Fallback: any English female-sounding voice
+  // Fallback: any English voice, prefer one with "female" in the name
   const english = voices.filter(v => v.lang.startsWith('en'));
-  return english[0] || voices[0] || null;
+  const female = english.find(v => /female/i.test(v.name));
+  if (female) return female;
+
+  // Second fallback: second English voice (often female on Windows)
+  return english[1] || english[0] || voices[0] || null;
 }
 
 // Simple chime using Web Audio API
@@ -42,11 +62,29 @@ export default function useVoice({ onTranscript, onTTSStart, onTTSEnd }) {
   const [supported, setSupported] = useState(false);
   const recognitionRef = useRef(null);
   const spaceHeld = useRef(false);
+  const selectedVoice = useRef(null);
+  const hasInteracted = useRef(false);
 
+  // Track user interaction for autoplay policy
+  useEffect(() => {
+    function markInteracted() {
+      hasInteracted.current = true;
+    }
+    window.addEventListener('click', markInteracted, { once: true });
+    window.addEventListener('keydown', markInteracted, { once: true });
+    return () => {
+      window.removeEventListener('click', markInteracted);
+      window.removeEventListener('keydown', markInteracted);
+    };
+  }, []);
+
+  // Load voices on mount
   useEffect(() => {
     setSupported(!!SpeechRecognition);
-    // Preload voices
-    speechSynthesis.getVoices();
+    pickVoice().then(voice => {
+      selectedVoice.current = voice;
+      console.log('[Voice] Selected TTS voice:', voice?.name || 'none');
+    });
   }, []);
 
   const startListening = useCallback(() => {
@@ -87,32 +125,55 @@ export default function useVoice({ onTranscript, onTTSStart, onTTSEnd }) {
     setIsListening(false);
   }, []);
 
+  // Speak text — chunks into sentences to avoid Chrome's 15-second kill bug
   const speak = useCallback((text) => {
     if (!text) return;
 
+    // Don't speak if user hasn't interacted yet (autoplay policy)
+    if (!hasInteracted.current) {
+      console.log('[Voice] Skipping TTS — no user interaction yet');
+      return;
+    }
+
+    // Strip emotion tag before speaking
+    const cleanText = stripEmotionTag(text);
+    if (!cleanText) return;
+
     speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voice = pickVoice();
-    if (voice) utterance.voice = voice;
-    utterance.rate = 0.95;
-    utterance.pitch = 1.05;
 
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      onTTSStart?.();
-    };
+    // Split into sentences to avoid Chrome's ~15s utterance timeout
+    const sentences = cleanText.match(/[^.!?]+[.!?]+/g) || [cleanText];
+    let started = false;
 
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      onTTSEnd?.();
-    };
+    sentences.forEach((sentence, i) => {
+      const utterance = new SpeechSynthesisUtterance(sentence.trim());
+      if (selectedVoice.current) utterance.voice = selectedVoice.current;
+      utterance.rate = 0.95;
+      utterance.pitch = 1.05;
 
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      onTTSEnd?.();
-    };
+      // Fire onTTSStart only on the first sentence
+      if (i === 0) {
+        utterance.onstart = () => {
+          started = true;
+          setIsSpeaking(true);
+          onTTSStart?.();
+        };
+      }
 
-    speechSynthesis.speak(utterance);
+      // Fire onTTSEnd only on the last sentence
+      if (i === sentences.length - 1) {
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          onTTSEnd?.();
+        };
+        utterance.onerror = () => {
+          setIsSpeaking(false);
+          onTTSEnd?.();
+        };
+      }
+
+      speechSynthesis.speak(utterance);
+    });
   }, [onTTSStart, onTTSEnd]);
 
   const stopSpeaking = useCallback(() => {

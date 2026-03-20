@@ -10,7 +10,26 @@ import useVoice from './hooks/useVoice';
 
 export default function App() {
   const [chatOpen, setChatOpen] = useState(false);
-  const { messages, sendMessage, isStreaming, currentEmotion, connected } = useChat();
+  const [modes, setModes] = useState([]);
+  const [currentMode, setCurrentMode] = useState('girlfriend');
+  const { messages, sendMessage, isStreaming, currentEmotion, connected, resetChat } = useChat();
+
+  // Fetch available modes on mount
+  useEffect(() => {
+    fetch('/api/modes').then(r => r.json()).then(setModes).catch(() => {});
+    fetch('/api/mode').then(r => r.json()).then(d => setCurrentMode(d.mode)).catch(() => {});
+  }, []);
+
+  const handleModeChange = useCallback((e) => {
+    const mode = e.target.value;
+    setCurrentMode(mode);
+    resetChat();
+    fetch('/api/mode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode }),
+    }).catch(() => {});
+  }, [resetChat]);
   const { displayEmotion, isBlinking, mouthOpen, startTalking, stopTalking, setDisplayEmotion } = useAvatar(currentEmotion);
   const lastAssistantMsg = useRef('');
 
@@ -85,11 +104,24 @@ export default function App() {
         />
       </div>
 
-      {!chatOpen && (
-        <button className="chat-toggle" onClick={() => setChatOpen(true)}>
-          💬 Chat
-        </button>
-      )}
+      <div className="top-controls">
+        {modes.length > 0 && (
+          <select
+            className="mode-switcher"
+            value={currentMode}
+            onChange={handleModeChange}
+          >
+            {modes.map(m => (
+              <option key={m.key} value={m.key}>{m.name}</option>
+            ))}
+          </select>
+        )}
+        {!chatOpen && (
+          <button className="chat-toggle-inline" onClick={() => setChatOpen(true)}>
+            Chat
+          </button>
+        )}
+      </div>
 
       <ChatPanel
         messages={messages}

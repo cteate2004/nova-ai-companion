@@ -1,27 +1,36 @@
 # Nova AI Companion
 
-A personal AI companion app with an animated avatar, voice interaction, and persistent memory. Nova runs locally on Windows and is powered by the Claude API.
+A personal AI companion with voice interaction, Gmail and Calendar integration, web search, image generation, push notifications, and persistent memory. Nova runs locally on Windows and is powered by Anthropic's Claude API.
 
 ## Features
 
-- **Animated Avatar** — Stylized SVG face with emotional states and idle animations
-- **Voice Interaction** — Push-to-talk with speech recognition and text-to-speech
-- **Persistent Memory** — Nova remembers details about you across conversations
-- **Streaming Chat** — Real-time streamed responses via SSE
-- **Dark Premium UI** — Immersive interface with particle background effects
+- **Streaming Chat** — Real-time SSE-streamed responses from Claude (claude-sonnet-4-20250514)
+- **Voice Interaction** — Push-to-talk (spacebar) or click mic, browser TTS with Aria voice, skips URLs in speech
+- **Personality Modes** — Girlfriend (default), Assistant, or Buddy — switch via dropdown, resets chat
+- **Gmail Integration** — Google OAuth2, reads inbox, filters spam, Nova summarizes naturally
+- **Calendar Integration** — Google Calendar API, reads ALL calendars including shared/subscribed
+- **Web Search** — Brave Search API, Claude decides when to search automatically via tool_use
+- **Image Generation** — Stable Horde (free, no API key), downloads locally. Ask Nova or type `/image [prompt]`
+- **iPhone Push Notifications** — ntfy.sh free service, install ntfy app and subscribe to topic
+- **Scheduled Check-ins** — Good morning (8 AM) and good night (10 PM) messages via node-cron
+- **Memory System** — Auto-extracts facts every 20 messages, stores in SQLite, included in context
+- **Emotions** — Avatar glow ring changes color based on mood (happy=gold, flirty=pink, etc.)
+- **Dark Premium UI** — Glass-morphism chat panel with particle background effects
 
 ## Tech Stack
 
-- **Frontend:** React 19 (Vite)
-- **Backend:** Node.js / Express
-- **Database:** SQLite via sql.js (pure JS, no native deps)
-- **AI:** Anthropic Claude API (claude-sonnet-4-20250514)
-- **Voice:** Web Speech API (STT) + SpeechSynthesis (TTS)
+- **Frontend:** React 19, Vite, Web Speech API (STT), SpeechSynthesis (TTS)
+- **Backend:** Node.js, Express, Anthropic Claude SDK (claude-sonnet-4-20250514)
+- **Database:** SQLite via sql.js (pure JS, no native dependencies)
+- **APIs:** Anthropic, Brave Search, Google (Gmail + Calendar), Stable Horde, ntfy.sh
 
 ## Prerequisites
 
 - Node.js 18+ and npm
-- An Anthropic API key ([get one here](https://console.anthropic.com/))
+- Anthropic API key ([get one here](https://console.anthropic.com/)) — **required**
+- Brave Search API key ([get one here](https://brave.com/search/api/)) — optional, free tier
+- Google Cloud project with Gmail + Calendar APIs enabled, OAuth2 Desktop credentials — optional
+- ntfy app on iPhone subscribed to your topic — optional
 - Chrome or Edge browser (for voice features)
 
 ## Setup
@@ -32,19 +41,26 @@ A personal AI companion app with an animated avatar, voice interaction, and pers
    cd nova-ai-companion
    ```
 
-2. Configure your API key:
+2. Configure environment variables:
    ```
    cp backend/.env.example backend/.env
    ```
-   Edit `backend/.env` and add your Anthropic API key.
+   Edit `backend/.env`:
+   ```env
+   ANTHROPIC_API_KEY=sk-ant-...          # Required
+   BRAVE_SEARCH_API_KEY=BSA...           # Optional — enables web search
+   NTFY_TOPIC=nova-companion             # Optional — push notification topic
+   ```
 
-3. Install dependencies:
+3. Place a face image as `frontend/public/nova-face.jpg` for Nova's avatar.
+
+4. Install dependencies:
    ```
    cd backend && npm install
    cd ../frontend && npm install
    ```
 
-4. Start the app:
+5. Start the app:
    ```
    # From the project root:
    start.bat
@@ -58,53 +74,82 @@ A personal AI companion app with an animated avatar, voice interaction, and pers
    cd frontend && npm run dev
    ```
 
-5. Open http://localhost:5173 in Chrome or Edge.
+6. Open http://localhost:5173 in Chrome or Edge.
+
+7. (Optional) Connect Google services:
+   Visit http://localhost:8000/api/google/auth and sign in to enable Gmail and Calendar.
 
 ## Project Structure
 
 ```
 ai-companion/
-├── backend/           # Express API server
-│   ├── server.js      # Routes and SSE streaming
-│   ├── database.js    # SQLite via sql.js
-│   ├── claude.js      # Anthropic SDK integration
-│   └── memory.js      # Fact extraction system
-├── frontend/          # React UI
+├── backend/
+│   ├── server.js        # Express API server, all routes, SSE streaming
+│   ├── claude.js        # Claude SDK with tool_use (5 tools)
+│   ├── modes.js         # Personality modes (girlfriend, assistant, buddy)
+│   ├── gmail.js         # Gmail API service
+│   ├── calendar.js      # Google Calendar service (all calendars)
+│   ├── search.js        # Brave Search API
+│   ├── imagegen.js      # Stable Horde image generation
+│   ├── notify.js        # ntfy.sh push notifications
+│   ├── scheduler.js     # node-cron scheduled check-ins
+│   ├── google-auth.js   # Google OAuth2 flow
+│   ├── memory.js        # Memory extraction system
+│   └── database.js      # SQLite via sql.js
+├── frontend/
 │   └── src/
-│       ├── components/  # Avatar, ChatPanel, VoiceControl, etc.
-│       ├── hooks/       # useChat, useVoice, useAvatar
-│       └── styles/      # Dark theme CSS
+│       ├── App.jsx           # Main app with mode switcher
+│       ├── components/
+│       │   └── ChatPanel.jsx # Chat with image/link rendering
+│       ├── hooks/
+│       │   ├── useChat.js    # Chat hook with /image command
+│       │   └── useVoice.js   # TTS with URL stripping, STT
+│       └── styles/           # Dark theme CSS
 ├── docs/
-│   └── TRAINING.md    # User training manual
-└── start.bat          # One-click Windows launcher
+│   └── TRAINING.md      # Full user training manual
+├── start.bat            # One-click Windows launcher
+└── CHANGELOG.md
 ```
 
 ## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | /api/chat | Send message, receive SSE stream |
-| GET | /api/history/:session_id | Get last 50 messages |
-| GET | /api/memory | Get stored memories |
-| GET | /api/health | Server health check |
+| POST | `/api/chat` | Send message, receive SSE stream |
+| GET | `/api/history/:session_id` | Get last 50 messages |
+| GET | `/api/memory` | Get stored memories |
+| GET | `/api/health` | Server health check |
+| GET | `/api/modes` | List personality modes |
+| GET | `/api/mode` | Get current mode |
+| POST | `/api/mode` | Switch personality mode |
+| POST | `/api/image` | Direct image generation (bypasses Claude) |
+| GET | `/api/scheduled` | Fetch unread scheduled messages |
+| GET | `/api/google/auth` | Start Google OAuth2 flow |
+| GET | `/api/google/status` | Check Google auth status |
+| POST | `/api/notify/test` | Send test push notification |
+| GET | `/api/notify/status` | Check notification config |
 
-## Current Status (v1.0.1)
+## Claude Tools
 
-All core features are built and working:
+Nova uses Claude's `tool_use` feature with 5 tools:
 
-- [x] Backend: Express + Claude SSE streaming + SQLite memory
-- [x] Frontend: React + Vite with proxy to backend
-- [x] SVG Avatar: 7 emotion states + idle animations (breathing, blinking, hair sway)
-- [x] Chat Panel: Glass-morphism sidebar with streaming display
-- [x] Voice: Push-to-talk (spacebar/mic) + TTS with sentence chunking
-- [x] Particle Background: Canvas bokeh with teal/gold particles
-- [x] Memory System: Fact extraction every 20 messages
-- [x] Windows Launcher: start.bat with auto-install and graceful shutdown
-- [x] TTS Fix: Async voice loading, Chrome 15s bug workaround, emotion tag stripping
+| Tool | Trigger | Description |
+|------|---------|-------------|
+| `web_search` | Ask about current events, news, etc. | Searches via Brave Search API |
+| `check_email` | "Check my email", "Any new messages?" | Reads Gmail inbox, filters spam |
+| `check_calendar` | "What's on my schedule?", "Am I free?" | Reads all Google Calendars |
+| `generate_image` | "Generate an image of...", "Draw me..." | Creates image via Stable Horde |
+| `send_notification` | "Remind me to...", "Send to my phone" | Pushes to iPhone via ntfy.sh |
 
-### Known Areas for Future Improvement
-- Avatar SVG could be refined for more visual detail/polish
-- Add more granular mouth animation synced to speech
-- Add settings panel (voice selection, TTS on/off, theme)
-- Mobile responsive layout
-- Session management UI (switch/delete sessions)
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude |
+| `BRAVE_SEARCH_API_KEY` | No | Brave Search API key (free tier) |
+| `NTFY_TOPIC` | No | ntfy.sh topic name (default: `nova-companion`) |
+
+## Documentation
+
+- **[Training Manual](docs/TRAINING.md)** — Complete user guide with step-by-step instructions for every feature
+- **[Changelog](CHANGELOG.md)** — Version history and release notes

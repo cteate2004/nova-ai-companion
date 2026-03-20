@@ -1,5 +1,19 @@
 node_modules/
 .env
-backend/data/*.db
+backend/data/
 dist/
 .vite/
+
+# Google OAuth credentials and tokens (sensitive)
+backend/google-credentials.json
+backend/client_secret_*.json
+backend/data/google-token.json
+
+# Generated images
+backend/public/images/
+
+# Avatar image (user-specific)
+frontend/public/nova-face.*
+
+# LivePortrait/SadTalker (large, local-only)
+liveportrait/

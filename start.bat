@@ -12,10 +12,6 @@ if not exist "%~dp0backend\.env" (
     echo [!] backend\.env not found!
     echo     Copy backend\.env.example to backend\.env and add your ANTHROPIC_API_KEY
     echo.
-    echo     Example:
-    echo       copy backend\.env.example backend\.env
-    echo       notepad backend\.env
-    echo.
     pause
     exit /b 1
 )

@@ -50,219 +50,152 @@ body {
   z-index: 1;
 }
 
-/* ===== AVATAR ===== */
+/* ===== LIFELIKE AVATAR ===== */
 .avatar-container {
-  width: 50vw;
-  max-width: 500px;
-  max-height: 60vh;
+  width: 400px;
+  height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  border-radius: 50%;
+  overflow: hidden;
 }
 
-.avatar-svg {
+.avatar-lifelike {
+  border: 2px solid rgba(0, 212, 170, 0.15);
+  box-shadow: 0 0 40px rgba(0, 212, 170, 0.1);
+  transition: box-shadow 600ms ease;
+}
+
+/* Glow ring behind avatar */
+.avatar-glow-ring {
+  position: absolute;
   width: 100%;
-  height: auto;
+  height: 100%;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: box-shadow 800ms ease;
+  z-index: 0;
 }
 
-/* ===== IDLE ANIMATIONS ===== */
-
-/* Breathing */
-.avatar-body {
-  animation: breathe 4s ease-in-out infinite;
+/* Static photo */
+.avatar-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  transition: opacity 400ms ease;
+  /* Subtle idle breathing animation */
+  animation: photoBreath 5s ease-in-out infinite;
 }
 
-@keyframes breathe {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+.avatar-photo--hidden {
+  opacity: 0;
 }
 
-/* Hair sway */
-.avatar-strand-left {
-  animation: hairSwayLeft 5s ease-in-out infinite;
-  transform-origin: top center;
-}
-.avatar-strand-right {
-  animation: hairSwayRight 5s ease-in-out infinite 0.5s;
-  transform-origin: top center;
+@keyframes photoBreath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.008); }
 }
 
-@keyframes hairSwayLeft {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(0.8deg); }
-}
-@keyframes hairSwayRight {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-0.8deg); }
-}
-
-/* Ambient glow pulse */
-.avatar-glow {
-  animation: glowPulse 6s ease-in-out infinite;
-}
-@keyframes glowPulse {
-  0%, 100% { opacity: 0.06; }
-  50% { opacity: 0.1; }
+/* D-ID video overlay */
+.avatar-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 300ms ease;
 }
 
-/* Flower subtle sway */
-.avatar-flower {
-  animation: flowerSway 7s ease-in-out infinite;
-  transform-origin: center center;
-}
-@keyframes flowerSway {
-  0%, 100% { transform: translate(295px, 155px) rotate(15deg); }
-  50% { transform: translate(295px, 155px) rotate(17deg); }
+.avatar-video--visible {
+  opacity: 1;
 }
 
-/* ===== BLINK ===== */
-.avatar--blinking .avatar-eyelid-left,
-.avatar--blinking .avatar-eyelid-right {
-  opacity: 1 !important;
+/* Emotion badge */
+.avatar-emotion-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  text-transform: capitalize;
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 3px 12px;
+  border-radius: 12px;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 300ms ease;
 }
 
-/* ===== TRANSITIONS (all emotion-affected elements) ===== */
-.avatar-eyes,
-.avatar-eyebrows,
-.avatar-mouth,
-.avatar-glow,
-.avatar-cheek-left,
-.avatar-cheek-right,
-.avatar-brow-left,
-.avatar-brow-right,
-.avatar-sparkles,
-.avatar-teeth {
-  transition: all 400ms ease-in-out;
-}
-
-/* ===== EMOTION: LISTENING ===== */
-.avatar--listening .avatar-eyes {
-  transform: scaleY(1.08) scaleX(1.03);
-}
-.avatar--listening .avatar-glow {
-  opacity: 0.2;
-  animation: listenPulse 1.5s ease-in-out infinite;
-}
-.avatar--listening .avatar-lips-outer {
-  transform: scaleY(1.05);
-}
-@keyframes listenPulse {
-  0%, 100% { opacity: 0.15; }
-  50% { opacity: 0.25; }
-}
-
-/* ===== EMOTION: THINKING ===== */
-.avatar--thinking .avatar-eye-left {
-  transform: translateX(-3px);
-}
-.avatar--thinking .avatar-eye-right {
-  transform: translateX(-3px);
-}
-.avatar--thinking .avatar-brow-right {
-  transform: translateY(-4px);
-}
-.avatar--thinking .avatar-sparkles {
-  opacity: 1 !important;
-  animation: sparkle 1.5s ease-in-out infinite;
-}
-@keyframes sparkle {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.3); }
-}
-
-/* ===== EMOTION: HAPPY ===== */
-.avatar--happy .avatar-lips-outer {
-  transform: scaleX(1.15) scaleY(1.1);
-}
-.avatar--happy .avatar-teeth {
+.avatar-emotion-badge:not(:empty) {
   opacity: 0.7;
 }
-.avatar--happy .avatar-cheek-left,
-.avatar--happy .avatar-cheek-right {
-  opacity: 0.5;
-}
-.avatar--happy .avatar-eyes {
-  transform: scaleY(0.9);
+
+.avatar-emotion--happy,
+.avatar-emotion--excited,
+.avatar-emotion--laughing { color: #ffd700; }
+.avatar-emotion--flirty { color: #ff6b9d; }
+.avatar-emotion--concerned { color: #6b9dff; }
+.avatar-emotion--thoughtful { color: #b06bff; }
+
+/* Placeholder when no image */
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(20, 20, 35, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
 }
 
-/* ===== EMOTION: EXCITED ===== */
-.avatar--excited .avatar-lips-outer {
-  transform: scaleX(1.2) scaleY(1.15);
+.avatar-placeholder-text {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 20px;
 }
-.avatar--excited .avatar-teeth {
+
+/* Video generating indicator */
+.video-generating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  margin-top: 12px;
   opacity: 0.8;
-}
-.avatar--excited .avatar-eyes {
-  transform: scaleY(1.05);
-}
-.avatar--excited .avatar-glow {
-  opacity: 0.2;
+  animation: fadeInOut 2s ease-in-out infinite;
 }
 
-/* ===== EMOTION: FLIRTY ===== */
-.avatar--flirty .avatar-eye-left {
-  transform: scaleY(0.85);
-}
-.avatar--flirty .avatar-eye-right {
-  transform: scaleY(0.85);
-}
-.avatar--flirty .avatar-brow-right {
-  transform: translateY(-3px);
-}
-.avatar--flirty .avatar-cheek-left,
-.avatar--flirty .avatar-cheek-right {
-  opacity: 0.6;
-}
-.avatar--flirty .avatar-lips-outer {
-  transform: skewX(-2deg) scaleX(1.05);
+.generating-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: dotPulse 1.2s ease-in-out infinite;
 }
 
-/* ===== EMOTION: CONCERNED ===== */
-.avatar--concerned .avatar-brow-left {
-  transform: rotate(5deg) translateY(2px);
-}
-.avatar--concerned .avatar-brow-right {
-  transform: rotate(-5deg) translateY(2px);
-}
-.avatar--concerned .avatar-lips-outer {
-  transform: scaleY(0.9) translateY(2px);
-}
-.avatar--concerned .avatar-eyes {
-  transform: scaleY(1.05);
-}
-
-/* ===== EMOTION: LAUGHING ===== */
-.avatar--laughing .avatar-eyes {
-  transform: scaleY(0.3);
-}
-.avatar--laughing .avatar-lips-outer {
-  transform: scaleX(1.25) scaleY(1.3);
-}
-.avatar--laughing .avatar-teeth {
-  opacity: 0.9;
-}
-.avatar--laughing .avatar-cheek-left,
-.avatar--laughing .avatar-cheek-right {
-  opacity: 0.6;
-}
-.avatar--laughing .avatar-face {
-  animation: laughShake 0.3s ease-in-out infinite;
-}
-@keyframes laughShake {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(0.5deg); }
-  75% { transform: rotate(-0.5deg); }
-}
-
-/* ===== EMOTION: TALKING ===== */
-.avatar--talking .avatar-eyes {
-  transform: scaleY(0.95);
-}
-
-/* Mouth open/close cycle */
-.avatar--mouth-open .avatar-lips-outer {
-  transform: scaleY(1.3) scaleX(1.05);
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 /* ===== CHAT PANEL ===== */
@@ -395,7 +328,87 @@ body {
   cursor: not-allowed;
 }
 
-/* Chat toggle button */
+/* Chat images */
+.chat-image-container {
+  display: block;
+  margin: 8px 0;
+}
+.chat-image {
+  max-width: 100%;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 200ms;
+}
+.chat-image:hover {
+  opacity: 0.85;
+}
+.chat-link {
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.chat-link:hover {
+  opacity: 0.8;
+}
+
+/* Top controls row */
+.top-controls {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 5;
+}
+
+/* Mode switcher dropdown */
+.mode-switcher {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 200ms;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2300d4aa' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+.mode-switcher:hover,
+.mode-switcher:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+.mode-switcher option {
+  background: #0f0f19;
+  color: var(--text);
+}
+
+/* Chat toggle button (inline version for top-controls) */
+.chat-toggle-inline {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px 16px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 200ms;
+}
+.chat-toggle-inline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Legacy chat toggle (keep for backwards compat) */
 .chat-toggle {
   position: fixed;
   top: 20px;

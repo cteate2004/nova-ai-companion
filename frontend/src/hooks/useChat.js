@@ -49,9 +49,46 @@ export default function useChat() {
   const sendMessage = useCallback(async (text) => {
     if (!text.trim() || isStreaming) return;
 
-    const userMsg = { role: 'user', content: text.trim() };
+    const trimmed = text.trim();
+    const userMsg = { role: 'user', content: trimmed };
     setMessages(prev => [...prev, userMsg]);
     setIsStreaming(true);
+
+    // Direct image command: /image <prompt> — bypasses Claude entirely
+    if (trimmed.startsWith('/image ')) {
+      const prompt = trimmed.slice(7).trim();
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Generating image...' }]);
+      try {
+        const imgRes = await fetch('/api/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        });
+        const imgData = await imgRes.json();
+        if (imgData.url) {
+          setMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { role: 'assistant', content: `Here you go babe 😘\n\n![${prompt}](${imgData.url})` };
+            return updated;
+          });
+        } else {
+          setMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { role: 'assistant', content: `Image generation failed: ${imgData.error}` };
+            return updated;
+          });
+        }
+      } catch (err) {
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'assistant', content: `Image generation failed: ${err.message}` };
+          return updated;
+        });
+      } finally {
+        setIsStreaming(false);
+      }
+      return;
+    }
 
     // Add placeholder for assistant response
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
@@ -133,6 +170,15 @@ export default function useChat() {
     }
   }, [isStreaming]);
 
+  // Reset conversation (new session, clear messages)
+  const resetChat = useCallback(() => {
+    const newId = crypto.randomUUID();
+    localStorage.setItem(SESSION_KEY, newId);
+    sessionId.current = newId;
+    setMessages([]);
+    setCurrentEmotion('neutral');
+  }, []);
+
   return {
     messages,
     sendMessage,
@@ -140,5 +186,6 @@ export default function useChat() {
     currentEmotion,
     connected,
     sessionId: sessionId.current,
+    resetChat,
   };
 }

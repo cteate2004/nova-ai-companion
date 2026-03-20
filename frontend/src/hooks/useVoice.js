@@ -9,6 +9,16 @@ function stripEmotionTag(text) {
   return text.replace(/\s*\{"emotion":\s*"\w+"\}\s*$/, '').trim();
 }
 
+// Strip URLs, markdown images, and markdown links for TTS
+function stripForTTS(text) {
+  return text
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')        // Remove ![alt](url)
+    .replace(/\[([^\]]*)\]\([^)]+\)/g, '$1')     // [text](url) → text
+    .replace(/https?:\/\/[^\s)]+/g, '')           // Remove bare URLs
+    .replace(/\s{2,}/g, ' ')                      // Collapse whitespace
+    .trim();
+}
+
 // Load voices asynchronously — Chrome fires voiceschanged after first call
 function getVoices() {
   return new Promise(resolve => {
@@ -23,7 +33,7 @@ function getVoices() {
 // Pick the best available female English voice
 async function pickVoice() {
   const voices = await getVoices();
-  const preferred = ['Zira', 'Hazel', 'Susan', 'Jenny', 'Aria'];
+  const preferred = ['Aria', 'Jenny', 'Zira', 'Hazel', 'Susan'];
 
   for (const name of preferred) {
     const match = voices.find(v => v.name.includes(name) && v.lang.startsWith('en'));
@@ -135,8 +145,8 @@ export default function useVoice({ onTranscript, onTTSStart, onTTSEnd }) {
       return;
     }
 
-    // Strip emotion tag before speaking
-    const cleanText = stripEmotionTag(text);
+    // Strip emotion tag and URLs before speaking
+    const cleanText = stripForTTS(stripEmotionTag(text));
     if (!cleanText) return;
 
     speechSynthesis.cancel();

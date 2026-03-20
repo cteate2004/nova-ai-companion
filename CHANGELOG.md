@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.0] - 2026-03-19
+
+### Added
+- Voice interaction via Web Speech API:
+  - Push-to-talk with spacebar (hold to listen, release to send)
+  - Click-to-talk with mic button
+  - Text-to-speech playback of Nova's responses
+  - Auto-selects best English female voice (prefers Zira/Hazel)
+  - Chime sounds on listen start/stop (Web Audio API)
+- Avatar state sync: "listening" while mic active, "talking" while TTS plays
+- Animated particle background (canvas-based):
+  - 50 bokeh particles in teal and warm gold
+  - Slow drift with sinusoidal wave motion
+  - Soft glow effect with shadow blur
+- Mic button with pulsing cyan glow when active
+- Updated training manual with voice interaction guide
+
 ## [0.2.0] - 2026-03-19
 
 ### Added

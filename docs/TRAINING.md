@@ -78,7 +78,31 @@ Open http://localhost:5173 in Chrome or Edge.
 
 ## 3. Voice Interaction
 
-*(Coming in Group 3 — Voice + Polish)*
+### Requirements
+- Use **Chrome** or **Edge** browser (Firefox has limited speech support)
+- Allow microphone access when prompted
+
+### Push-to-Talk (Spacebar)
+1. Make sure the chat input field is NOT focused (click somewhere on the background)
+2. **Hold the spacebar** to start listening — you'll hear a chime and the mic button glows
+3. **Speak your message** while holding spacebar
+4. **Release spacebar** — another chime plays, your speech is transcribed and sent to Nova
+5. Nova's response appears in chat AND is spoken aloud via text-to-speech
+
+### Click-to-Talk (Mic Button)
+1. Click the **microphone button** below Nova's face
+2. Speak your message
+3. Click again to stop (or it stops automatically after silence)
+
+### Text-to-Speech
+- Nova automatically speaks her responses aloud after each message
+- While speaking, her avatar enters the "talking" state with mouth animation
+- To interrupt Nova while she's speaking, click the mic button
+
+### Tips
+- The spacebar shortcut only works when you're NOT typing in the chat input
+- If voice doesn't work, check that your browser has microphone permission enabled
+- Nova will use the best available English female voice on your system
 
 ## 4. Nova's Emotions
 

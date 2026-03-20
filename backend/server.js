@@ -234,7 +234,7 @@ async function start() {
   // Start scheduled check-ins (morning & night messages)
   startScheduler();
 
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Nova] Backend running on http://localhost:${PORT}`);
     if (process.env.BRAVE_SEARCH_API_KEY && process.env.BRAVE_SEARCH_API_KEY !== 'your-brave-api-key-here') {
       console.log('[Nova] Web search: ENABLED');

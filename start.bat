@@ -38,28 +38,37 @@ if not exist "%~dp0frontend\node_modules" (
     )
 )
 
+:: Get local IP for mobile access
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /C:"IPv4" ^| findstr /C:"192.168"') do set LOCAL_IP=%%a
+set LOCAL_IP=%LOCAL_IP: =%
+
 :: Start backend (minimized)
 echo [*] Starting backend server on port 8000...
 start /min "Nova Backend" cmd /c "cd /d %~dp0backend && node server.js"
 
 :: Start frontend (minimized)
 echo [*] Starting frontend on port 5173...
-start /min "Nova Frontend" cmd /c "cd /d %~dp0frontend && npx vite"
+start /min "Nova Frontend" cmd /c "cd /d %~dp0frontend && npx vite --host"
 
 :: Wait for servers to start
 echo [*] Waiting for servers to start...
-timeout /t 4 /nobreak > nul
+timeout /t 5 /nobreak > nul
 
 :: Open browser
 echo [*] Opening Nova in browser...
 start http://localhost:5173
 
 echo.
-echo  ==============================
+echo  ======================================
 echo   Nova is running!
-echo   Backend:  http://localhost:8000
-echo   Frontend: http://localhost:5173
-echo  ==============================
+echo.
+echo   PC:     http://localhost:5173
+echo   Mobile: http://%LOCAL_IP%:5173
+echo  ======================================
+echo.
+echo   To install on iPhone:
+echo   1. Open http://%LOCAL_IP%:5173 in Safari
+echo   2. Tap Share ^> Add to Home Screen
 echo.
 echo  Press any key to shut down...
 pause > nul

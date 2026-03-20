@@ -1,0 +1,18 @@
+{
+  "name": "nova-backend",
+  "version": "1.0.0",
+  "description": "Nova AI Companion - Backend Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "sql.js": "^1.12.0",
+    "uuid": "^11.1.0"
+  }
+}

@@ -1,5 +1,5 @@
 // Nova Service Worker — enables PWA install and basic caching
-const CACHE_NAME = 'nova-v1';
+const CACHE_NAME = 'nova-v2';
 const PRECACHE = [
   '/',
 ];

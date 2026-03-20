@@ -42,6 +42,14 @@ if not exist "%~dp0frontend\node_modules" (
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /C:"IPv4" ^| findstr /C:"192.168"') do set LOCAL_IP=%%a
 set LOCAL_IP=%LOCAL_IP: =%
 
+:: Start TTS service if Python venv exists
+if exist "%~dp0liveportrait\venv\Scripts\activate.bat" (
+    echo [*] Starting TTS service on port 8002...
+    start /min "Nova TTS" cmd /c "cd /d %~dp0tts && ..\liveportrait\venv\Scripts\activate.bat && python app.py"
+) else (
+    echo [*] TTS service not available — using browser TTS fallback
+)
+
 :: Start backend (minimized)
 echo [*] Starting backend server on port 8000...
 start /min "Nova Backend" cmd /c "cd /d %~dp0backend && node server.js"
@@ -63,18 +71,20 @@ echo  ======================================
 echo   Nova is running!
 echo.
 echo   PC:     http://localhost:5173
-echo   Mobile: http://%LOCAL_IP%:5173
+echo   Mobile: https://%LOCAL_IP%:8000
 echo  ======================================
 echo.
 echo   To install on iPhone:
-echo   1. Open http://%LOCAL_IP%:5173 in Safari
-echo   2. Tap Share ^> Add to Home Screen
+echo   1. Open https://%LOCAL_IP%:8000 in Safari
+echo   2. Tap "Show Details" ^> "visit this website"
+echo   3. Tap Share ^> Add to Home Screen
 echo.
 echo  Press any key to shut down...
 pause > nul
 
 :: Kill processes
 echo [*] Shutting down...
+taskkill /fi "WINDOWTITLE eq Nova TTS" /f > nul 2>&1
 taskkill /fi "WINDOWTITLE eq Nova Backend" /f > nul 2>&1
 taskkill /fi "WINDOWTITLE eq Nova Frontend" /f > nul 2>&1
 echo [*] Nova shut down. Goodbye!

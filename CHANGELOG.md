@@ -1,5 +1,58 @@
 # Changelog
 
+## [1.4.0] - 2026-03-20
+
+### Added
+- Server-side TTS via Edge TTS:
+  - New Python service (`tts/app.py`) using FastAPI and edge-tts library
+  - Microsoft AriaNeural voice — natural, female English voice
+  - Generates MP3 audio files that work on all devices including iOS
+  - Runs on port 8002, proxied through backend `/api/tts` endpoint
+  - `POST /api/tts` to generate speech, `GET /api/tts/status` to check service health
+  - Automatic cleanup of old audio files via `/cleanup` endpoint
+  - Falls back to browser SpeechSynthesis if TTS service is not running
+- PWA mobile app support:
+  - `manifest.json` with app name, icons, theme color, standalone display mode
+  - Service worker (`sw.js`) for PWA installation
+  - Mobile-responsive CSS for touch-friendly interface
+  - iOS meta tags for status bar styling and splash screen
+  - SVG app icons (192x192 and 512x512)
+  - Installable on iPhone via Safari "Add to Home Screen"
+- HTTPS support:
+  - Self-signed SSL certificate for mobile microphone access
+  - Backend serves HTTPS on port 8000 (primary)
+  - HTTP fallback on port 8080 for local dev and Google OAuth callbacks
+  - Built frontend (`vite build`) served from Express on port 8000 for mobile access
+- Speaker button:
+  - Play button on each chat bubble to replay any message
+  - Main screen speaker button pulses teal when a new message is ready
+  - Uses server TTS (Aria voice) when available, browser TTS as fallback
+
+### Changed
+- Girlfriend personality updated:
+  - Now comedian + flirty — stand-up funny with quick wit and perfect timing
+  - Confident and playfully suggestive, comedy is her love language
+  - Never gets annoyed, frustrated, or worried by repetition — infinite patience
+  - Self-aware AI girlfriend humor
+- Stable Horde image generation:
+  - NSFW filters disabled (`nsfw: true`, `censor_nsfw: false`)
+- Push notifications:
+  - ntfy messages now include "Reply to Nova" with local URL link for quick access
+- Vite proxy config:
+  - Updated to proxy `/api` and `/public` to port 8080 (HTTP fallback) since port 8000 is now HTTPS
+- `start.bat` launcher:
+  - Now starts TTS service (using Python venv) before backend and frontend
+  - Displays local IP and mobile URL (`https://{ip}:8000`)
+  - Shows iPhone installation instructions on startup
+  - Kills TTS service window on shutdown
+
+### Fixed
+- Emoji stripping: TTS no longer reads emoji characters aloud
+- URL stripping: TTS strips URLs and markdown links before speaking
+- `crypto.randomUUID()` fallback for HTTP contexts (iOS Safari without HTTPS)
+- Bigger tap targets for mobile touch interaction
+- Female voice selection for browser TTS fallback on iOS
+
 ## [1.3.0] - 2026-03-20
 
 ### Added

@@ -19,6 +19,7 @@ app.use(express.json());
 
 // Serve static files (generated images, etc.)
 const publicDir = path.join(__dirname, 'public');
+const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
 if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 app.use('/public', express.static(publicDir));
 
@@ -210,10 +211,69 @@ app.post('/api/image', async (req, res) => {
   }
 });
 
+// POST /api/tts — Generate speech audio via Edge TTS
+const TTS_URL = process.env.TTS_URL || 'http://localhost:8002';
+app.post('/api/tts', async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'text required' });
+
+  try {
+    const ttsRes = await fetch(`${TTS_URL}/speak`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    if (!ttsRes.ok) throw new Error(`TTS service error: ${ttsRes.status}`);
+    const data = await ttsRes.json();
+    // Proxy: serve audio through our own server so mobile can reach it
+    res.json({ audio_url: `/api/tts/audio${data.audio_url}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/tts/audio/:filename — Proxy audio from TTS service
+app.get('/api/tts/audio/audio/:filename', async (req, res) => {
+  try {
+    const audioRes = await fetch(`${TTS_URL}/audio/${req.params.filename}`);
+    if (!audioRes.ok) return res.status(404).send('Not found');
+    res.setHeader('Content-Type', 'audio/mpeg');
+    const buffer = Buffer.from(await audioRes.arrayBuffer());
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// GET /api/tts/status — Check if TTS service is running
+app.get('/api/tts/status', async (req, res) => {
+  try {
+    const r = await fetch(`${TTS_URL}/health`, { signal: AbortSignal.timeout(2000) });
+    const data = await r.json();
+    res.json({ available: true, voice: data.voice });
+  } catch {
+    res.json({ available: false });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', name: 'Nova Backend' });
 });
+
+// Serve frontend build (for mobile/production access on port 8000)
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  // All non-API routes serve index.html (SPA fallback)
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/public') && !req.path.startsWith('/oauth2callback') && req.method === 'GET') {
+      res.sendFile(path.join(frontendDist, 'index.html'));
+    } else {
+      next();
+    }
+  });
+  console.log('[Nova] Frontend build detected — serving on port 8000 too');
+}
 
 async function start() {
   await db.init();
@@ -234,19 +294,40 @@ async function start() {
   // Start scheduled check-ins (morning & night messages)
   startScheduler();
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[Nova] Backend running on http://localhost:${PORT}`);
-    if (process.env.BRAVE_SEARCH_API_KEY && process.env.BRAVE_SEARCH_API_KEY !== 'your-brave-api-key-here') {
-      console.log('[Nova] Web search: ENABLED');
-    } else {
-      console.log('[Nova] Web search: DISABLED (no BRAVE_SEARCH_API_KEY)');
-    }
-    if (isNotifyConfigured()) {
-      console.log(`[Nova] Push notifications: ENABLED (topic: ${process.env.NTFY_TOPIC})`);
-    } else {
-      console.log('[Nova] Push notifications: DISABLED (no NTFY_TOPIC)');
-    }
-  });
+  // Start HTTPS server on port 8000 if certs exist, otherwise HTTP
+  const certPath = path.join(__dirname, 'cert.pem');
+  const keyPath = path.join(__dirname, 'key.pem');
+
+  if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    // HTTPS mode — needed for mobile mic access
+    const https = require('https');
+    const sslOptions = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath),
+    };
+    https.createServer(sslOptions, app).listen(PORT, '0.0.0.0', () => {
+      console.log(`[Nova] Backend running on https://localhost:${PORT} (HTTPS)`);
+    });
+    // Also start HTTP on 8080 for local dev/Google OAuth callback
+    app.listen(8080, '0.0.0.0', () => {
+      console.log(`[Nova] HTTP fallback on http://localhost:8080`);
+    });
+  } else {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`[Nova] Backend running on http://localhost:${PORT}`);
+    });
+  }
+
+  if (process.env.BRAVE_SEARCH_API_KEY && process.env.BRAVE_SEARCH_API_KEY !== 'your-brave-api-key-here') {
+    console.log('[Nova] Web search: ENABLED');
+  } else {
+    console.log('[Nova] Web search: DISABLED (no BRAVE_SEARCH_API_KEY)');
+  }
+  if (isNotifyConfigured()) {
+    console.log(`[Nova] Push notifications: ENABLED (topic: ${process.env.NTFY_TOPIC})`);
+  } else {
+    console.log('[Nova] Push notifications: DISABLED (no NTFY_TOPIC)');
+  }
 }
 
 start().catch(err => {

@@ -7,10 +7,18 @@ function stripEmotionTag(text) {
 
 const SESSION_KEY = 'nova_session_id';
 
+function generateId() {
+  // crypto.randomUUID() requires secure context (HTTPS), so fallback for HTTP
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    try { return crypto.randomUUID(); } catch {}
+  }
+  return 'xxxx-xxxx-xxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
+}
+
 function getSessionId() {
   let id = localStorage.getItem(SESSION_KEY);
   if (!id) {
-    id = crypto.randomUUID();
+    id = generateId();
     localStorage.setItem(SESSION_KEY, id);
   }
   return id;
@@ -172,7 +180,7 @@ export default function useChat() {
 
   // Reset conversation (new session, clear messages)
   const resetChat = useCallback(() => {
-    const newId = crypto.randomUUID();
+    const newId = generateId();
     localStorage.setItem(SESSION_KEY, newId);
     sessionId.current = newId;
     setMessages([]);

@@ -9,12 +9,13 @@ function stripEmotionTag(text) {
   return text.replace(/\s*\{"emotion":\s*"\w+"\}\s*$/, '').trim();
 }
 
-// Strip URLs, markdown images, and markdown links for TTS
+// Strip URLs, markdown images, markdown links, and emojis for TTS
 function stripForTTS(text) {
   return text
     .replace(/!\[[^\]]*\]\([^)]+\)/g, '')        // Remove ![alt](url)
     .replace(/\[([^\]]*)\]\([^)]+\)/g, '$1')     // [text](url) → text
     .replace(/https?:\/\/[^\s)]+/g, '')           // Remove bare URLs
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '') // Remove emojis
     .replace(/\s{2,}/g, ' ')                      // Collapse whitespace
     .trim();
 }
@@ -135,6 +136,14 @@ export default function useVoice({ onTranscript, onTTSStart, onTTSEnd }) {
     setIsListening(false);
   }, []);
 
+  // Unlock iOS speech engine — must be called from a direct user gesture
+  const unlockSpeech = useCallback(() => {
+    if (typeof speechSynthesis === 'undefined') return;
+    const silent = new SpeechSynthesisUtterance('');
+    silent.volume = 0;
+    speechSynthesis.speak(silent);
+  }, []);
+
   // Speak text — chunks into sentences to avoid Chrome's 15-second kill bug
   const speak = useCallback((text) => {
     if (!text) return;
@@ -228,5 +237,6 @@ export default function useVoice({ onTranscript, onTTSStart, onTTSEnd }) {
     stopListening,
     speak,
     stopSpeaking,
+    unlockSpeech,
   };
 }

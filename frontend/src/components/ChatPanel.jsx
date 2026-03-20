@@ -9,38 +9,29 @@ import React, { useState, useRef, useEffect } from 'react';
 function renderContent(text) {
   if (!text) return null;
 
-  // Split on markdown images, links, and bare URLs
   const parts = [];
-  let remaining = text;
-
-  // Pattern: ![alt](url) or [text](url) or bare https:// URLs
   const regex = /!\[([^\]]*)\]\(([^)]+)\)|\[([^\]]*)\]\(([^)]+)\)|(https?:\/\/[^\s)]+)/g;
   let match;
   let lastIndex = 0;
 
-  while ((match = regex.exec(remaining)) !== null) {
-    // Add text before this match
+  while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      parts.push({ type: 'text', content: remaining.slice(lastIndex, match.index) });
+      parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
     }
 
     if (match[1] !== undefined || match[2]) {
-      // Markdown image: ![alt](url)
       parts.push({ type: 'image', alt: match[1], url: match[2] });
     } else if (match[3] !== undefined || match[4]) {
-      // Markdown link: [text](url)
       parts.push({ type: 'link', text: match[3], url: match[4] });
     } else if (match[5]) {
-      // Bare URL
       parts.push({ type: 'link', text: 'View Link', url: match[5] });
     }
 
     lastIndex = match.index + match[0].length;
   }
 
-  // Add remaining text
-  if (lastIndex < remaining.length) {
-    parts.push({ type: 'text', content: remaining.slice(lastIndex) });
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', content: text.slice(lastIndex) });
   }
 
   if (parts.length === 0) return text;
@@ -70,6 +61,64 @@ function renderContent(text) {
       );
     }
     return null;
+  });
+}
+
+// Strip URLs/markdown/emojis for TTS
+function stripForTTS(text) {
+  return text
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/https?:\/\/[^\s)]+/g, '')
+    .replace(/\{"emotion":\s*"\w+"\}\s*$/g, '')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+// Speak text — tries server TTS (Edge TTS / Aria), falls back to browser TTS
+async function speakText(text) {
+  const clean = stripForTTS(text);
+  if (!clean) return;
+
+  // Try server-side TTS first (natural Aria voice)
+  try {
+    const res = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: clean }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.audio_url) {
+        const audio = new Audio(data.audio_url);
+        audio.play();
+        return;
+      }
+    }
+  } catch {}
+
+  // Fallback to browser TTS
+  speechSynthesis.cancel();
+  const voices = speechSynthesis.getVoices();
+  const preferred = ['Samantha', 'Karen', 'Moira', 'Tessa', 'Aria', 'Jenny', 'Zira', 'Hazel'];
+  let voice = null;
+  for (const name of preferred) {
+    voice = voices.find(v => v.name.includes(name) && v.lang.startsWith('en'));
+    if (voice) break;
+  }
+  if (!voice) {
+    const english = voices.filter(v => v.lang.startsWith('en'));
+    voice = english.find(v => /female/i.test(v.name)) || english[1] || english[0] || null;
+  }
+
+  const sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
+  sentences.forEach(function(sentence) {
+    var utterance = new SpeechSynthesisUtterance(sentence.trim());
+    if (voice) utterance.voice = voice;
+    utterance.rate = 0.95;
+    utterance.pitch = 1.05;
+    speechSynthesis.speak(utterance);
   });
 }
 
@@ -104,7 +153,20 @@ export default function ChatPanel({ messages, isStreaming, onSend, isOpen, onClo
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`chat-bubble ${msg.role}`}>
-            {msg.content ? renderContent(msg.content) : (
+            {msg.content ? (
+              <>
+                {renderContent(msg.content)}
+                {msg.role === 'assistant' && msg.content && (
+                  <button
+                    className="chat-speak-btn"
+                    onClick={() => speakText(msg.content)}
+                    title="Tap to hear Nova say this"
+                  >
+                    🔊
+                  </button>
+                )}
+              </>
+            ) : (
               <span className="chat-streaming">
                 <span className="streaming-dots">
                   <span></span><span></span><span></span>

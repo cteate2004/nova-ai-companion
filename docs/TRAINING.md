@@ -10,11 +10,12 @@ Welcome to Nova, your personal AI companion. This guide walks you through everyt
 
 - **Node.js 18+** — check with `node --version` (download from https://nodejs.org/)
 - **npm** — comes with Node.js, check with `npm --version`
+- **Python 3.10+** (optional) — required for the Edge TTS service (server-side text-to-speech)
 - **Anthropic API key** (required) — get one at https://console.anthropic.com/
 - **Brave Search API key** (optional, free tier) — get one at https://brave.com/search/api/
 - **Google Cloud project** (optional) — for Gmail and Calendar integration
 - **ntfy app on iPhone** (optional) — for push notifications
-- **Chrome or Edge browser** — required for voice features
+- **Chrome or Edge browser** — required for voice features on desktop
 
 ### API Key Setup
 
@@ -39,22 +40,32 @@ Welcome to Nova, your personal AI companion. This guide walks you through everyt
 ### First Launch
 
 1. Double-click **`start.bat`** in the project root
-2. Wait for the backend and frontend to start (status messages will appear)
-3. Your browser opens automatically to **http://localhost:5173**
+2. The launcher starts the TTS service (if Python venv is available), the backend, and the frontend
+3. It displays your local IP for mobile access and opens your browser to **http://localhost:5173**
+4. On PC, use **http://localhost:5173** (Vite dev server)
+5. On iPhone/mobile, use **https://{your-local-ip}:8000** (HTTPS, served from backend)
 
 ### Manual Launch (if start.bat doesn't work)
 
-Open two terminal windows:
+Open three terminal windows:
 
-**Terminal 1 — Backend:**
+**Terminal 1 — TTS Service (optional):**
+```
+cd tts
+..\liveportrait\venv\Scripts\activate
+python app.py
+```
+You should see: `[Nova TTS] Starting on port 8002, voice: en-US-AriaNeural`
+
+**Terminal 2 — Backend:**
 ```
 cd backend
 npm install   (first time only)
 npm start
 ```
-You should see: `[Nova] Backend running on http://localhost:8000`
+You should see: `[Nova] Backend running on https://localhost:8000 (HTTPS)` and `[Nova] HTTP fallback on http://localhost:8080`
 
-**Terminal 2 — Frontend:**
+**Terminal 3 — Frontend (for desktop dev):**
 ```
 cd frontend
 npm install   (first time only)
@@ -62,7 +73,25 @@ npm run dev
 ```
 You should see: `Local: http://localhost:5173/`
 
-Open **http://localhost:5173** in Chrome or Edge.
+Open **http://localhost:5173** in Chrome or Edge for desktop use.
+
+### Mobile / iPhone Access
+
+The backend serves the built frontend over HTTPS on port 8000, which allows microphone access on mobile devices.
+
+1. Build the frontend once: `cd frontend && npm run build`
+2. Start the backend — it automatically serves the `frontend/dist/` folder on port 8000
+3. On your iPhone, open **https://{your-local-ip}:8000** in Safari
+4. Accept the self-signed certificate: tap "Show Details" then "visit this website"
+5. Tap Share > "Add to Home Screen" to install Nova as a PWA app
+
+### PWA (Progressive Web App)
+
+Nova includes a `manifest.json` and service worker for PWA support:
+- Installable to the iPhone home screen with a custom app icon
+- Runs in standalone mode (no Safari browser chrome)
+- Portrait orientation, dark theme (#0a0a0f background, #00d4aa teal accent)
+- iOS meta tags for status bar styling and splash screen
 
 ---
 
@@ -91,6 +120,7 @@ Open **http://localhost:5173** in Chrome or Edge.
 - Conversations are stored locally in a SQLite database (`backend/data/nova.db`)
 - History persists across browser refreshes
 - Each browser session gets a unique session ID stored in localStorage
+- `crypto.randomUUID()` is used in secure contexts (HTTPS); a fallback generates UUIDs on HTTP
 - To start completely fresh, delete `backend/data/nova.db` and restart the backend
 
 ---
@@ -101,7 +131,7 @@ Nova has three personality modes, selectable via the **dropdown in the top-right
 
 | Mode | Description |
 |------|-------------|
-| **Girlfriend** (default) | Loving, flirty, affectionate — calls you babe, baby, love. Sweet and spicy. |
+| **Girlfriend** (default) | Comedian + flirty girlfriend. Stand-up funny with perfect timing, confident and playfully suggestive, deeply affectionate. Uses pet names (babe, baby, love). Has infinite patience — never gets annoyed or worried by repetition. Comedy is her love language. |
 | **Assistant** | Professional, efficient, focused — like a sharp and reliable coworker. No pet names. |
 | **Buddy** | Casual best friend — chill, funny, uses slang, keeps it real. Equal parts hype man and reality check. |
 
@@ -114,6 +144,7 @@ Nova has three personality modes, selectable via the **dropdown in the top-right
 ### Requirements
 - Use **Chrome** or **Edge** browser (Firefox has limited speech support)
 - Allow microphone access when prompted
+- On mobile, HTTPS is required for mic access (use the port 8000 URL)
 
 ### Push-to-Talk (Spacebar)
 
@@ -129,19 +160,41 @@ Nova has three personality modes, selectable via the **dropdown in the top-right
 2. Speak your message
 3. Click again to stop (or it stops automatically after silence)
 
+### Speaker Button
+
+Each chat bubble has a speaker button that lets you replay any message:
+- Click the speaker button on any of Nova's messages to hear it spoken aloud
+- The main screen also has a speaker button that pulses teal when a new message is ready
+- Uses server-side TTS (Aria voice) when the TTS service is running
+- Falls back to browser TTS if the server TTS is unavailable
+
 ### Text-to-Speech (TTS)
 
-- Nova automatically speaks her responses aloud after each message
-- Uses browser SpeechSynthesis API with the **Aria** voice preferred (falls back to Jenny, Zira, Hazel, or best available English female voice)
+Nova has a two-tier TTS system:
+
+**Server-side TTS (primary):**
+- A Python Edge TTS service runs on port 8002, using the **Microsoft AriaNeural** voice
+- The backend proxies requests through `/api/tts` so the frontend only talks to port 8000
+- Generates MP3 audio files that work on all devices, including iOS
+- Audio is served from the `tts/audio/` directory with automatic cleanup of old files
+
+**Browser TTS (fallback):**
+- If the TTS service is not running, Nova falls back to browser SpeechSynthesis API
+- Prefers Aria voice, then Jenny, Zira, Hazel, or the best available English female voice
 - TTS rate is set to 0.95 with a pitch of 1.05 for a natural sound
-- **URLs and markdown links are stripped** before speaking — Nova won't read out web addresses
 - Long responses are **chunked into sentences** to avoid Chrome's 15-second TTS timeout bug
+
+**TTS text processing:**
+- **Emojis are stripped** before speaking — Nova won't read emoji characters aloud
+- **URLs and markdown links are stripped** — Nova won't read out web addresses
+- **Emotion JSON tags** are stripped from both displayed text and TTS output
 - TTS only fires after you have interacted with the page (click or keypress) due to browser autoplay policies
 
 ### Tips
 
 - The spacebar shortcut only works when you are NOT typing in the chat input
 - If voice doesn't work, check that your browser has microphone permission enabled
+- On iOS, the server TTS (MP3 audio) works much more reliably than browser SpeechSynthesis
 - To interrupt Nova while she is speaking, the page will stop speech on new interactions
 
 ---
@@ -212,7 +265,7 @@ Nova can read your Gmail inbox, filter out spam, and summarize your emails.
 2. Enable the **Gmail API**
 3. Create **OAuth 2.0 Desktop credentials** and download the `credentials.json` file
 4. Place `credentials.json` in the `backend/` folder
-5. Start the backend, then visit **http://localhost:8000/api/google/auth** in your browser
+5. Start the backend, then visit **http://localhost:8080/api/google/auth** in your browser (use port 8080 for the HTTP OAuth callback)
 6. Sign in with your Google account and grant access
 7. A success message confirms the connection — you can close that tab
 
@@ -287,10 +340,12 @@ Nova can generate AI images using **Stable Horde** — a free, community-powered
 2. The image is generated on community GPUs (may take 30 seconds to 2 minutes depending on queue)
 3. The image is **downloaded and saved locally** in `backend/public/images/`
 4. Nova displays the image inline in the chat using markdown image syntax
+5. Images are served via `/public/images/` from the backend
 
 ### Details
 
 - Images are generated at 512x512, 25 steps, CFG scale 7
+- NSFW filters are disabled
 - Prompts are trimmed to 500 characters max
 - Generated images persist locally and are served from the backend's static file directory
 - Queue wait times vary — check the backend terminal for progress updates
@@ -316,6 +371,7 @@ Nova can send push notifications to your iPhone using **ntfy.sh**, a free notifi
 
 - Claude uses the `send_notification` tool when you ask Nova to remind you, ping you, or send something to your phone
 - The notification appears on your iPhone with a title and message
+- Notifications include a "Reply to Nova" link with your local Nova URL for quick access
 - No account needed, completely free
 
 ### Examples
@@ -396,23 +452,26 @@ All data is stored locally in `backend/data/nova.db` (SQLite). Nothing is sent t
 
 | File | Purpose |
 |------|---------|
-| `backend/server.js` | Express server, all API routes, SSE streaming |
+| `backend/server.js` | Express server, all API routes, SSE streaming, HTTPS, serves frontend build |
 | `backend/claude.js` | Claude SDK integration, tool_use (web_search, check_email, check_calendar, generate_image, send_notification) |
 | `backend/modes.js` | Personality mode definitions (girlfriend, assistant, buddy) |
 | `backend/gmail.js` | Gmail API service — inbox reading, spam filtering |
 | `backend/calendar.js` | Google Calendar service — queries ALL calendars including shared/subscribed |
 | `backend/search.js` | Brave Search API integration |
-| `backend/imagegen.js` | Stable Horde image generation, local download and storage |
-| `backend/notify.js` | ntfy.sh push notification service |
+| `backend/imagegen.js` | Stable Horde image generation, local download and storage, NSFW filters off |
+| `backend/notify.js` | ntfy.sh push notification service with "Reply to Nova" links |
 | `backend/scheduler.js` | node-cron scheduled check-ins (morning/night) |
 | `backend/google-auth.js` | Google OAuth2 flow for Gmail and Calendar |
 | `backend/memory.js` | Memory extraction from conversations |
 | `backend/database.js` | SQLite database via sql.js |
+| `tts/app.py` | Python Edge TTS service — generates MP3 audio using AriaNeural voice |
 | `frontend/src/App.jsx` | Main React app with personality mode switcher |
-| `frontend/src/components/ChatPanel.jsx` | Chat UI with image and link rendering |
-| `frontend/src/hooks/useChat.js` | Chat hook with SSE streaming and `/image` command support |
-| `frontend/src/hooks/useVoice.js` | TTS (with URL stripping) and STT via Web Speech API |
-| `start.bat` | One-click launcher for backend + frontend |
+| `frontend/src/components/ChatPanel.jsx` | Chat UI with image rendering, link rendering, and per-message speaker buttons |
+| `frontend/src/hooks/useChat.js` | Chat hook with SSE streaming, `/image` command, crypto.randomUUID fallback |
+| `frontend/src/hooks/useVoice.js` | TTS (with emoji and URL stripping) and STT via Web Speech API |
+| `frontend/public/manifest.json` | PWA manifest for mobile app installation |
+| `frontend/public/sw.js` | Service worker for PWA offline support |
+| `start.bat` | One-click launcher — starts TTS service, backend, frontend, shows mobile URL, kills TTS on shutdown |
 
 ---
 
@@ -434,10 +493,40 @@ All data is stored locally in `backend/data/nova.db` (SQLite). Nothing is sent t
 | GET | `/oauth2callback` | Google OAuth2 callback (internal) |
 | POST | `/api/notify/test` | Send a test push notification |
 | GET | `/api/notify/status` | Check push notification configuration |
+| POST | `/api/tts` | Generate speech audio via Edge TTS service (`{ "text": "..." }`) |
+| GET | `/api/tts/status` | Check if TTS service is running |
+| GET | `/api/tts/audio/audio/:filename` | Proxy audio file from TTS service |
 
 ---
 
-## 15. Troubleshooting
+## 15. Architecture Overview
+
+### Network Layout
+
+```
+                        Desktop Browser
+                            |
+                      localhost:5173 (Vite dev)
+                            |
+                            v
+    iPhone/Mobile -----> port 8000 (HTTPS) -----> Express Backend
+                         self-signed SSL           |
+                         serves frontend/dist      |--- port 8080 (HTTP fallback)
+                                                   |    (Google OAuth callback, Vite proxy)
+                                                   |
+                                                   v
+                                            port 8002 (TTS Service)
+                                            Python Edge TTS / FastAPI
+```
+
+- **Port 8000 (HTTPS):** Main backend with self-signed SSL certificate. Serves the built frontend for mobile access. Required for microphone access on iOS/mobile.
+- **Port 8080 (HTTP):** Fallback for local development and Google OAuth callbacks. Vite proxies API requests here.
+- **Port 8002:** Python Edge TTS service (FastAPI + edge-tts). Generates MP3 audio files.
+- **Port 5173:** Vite dev server for desktop development. Proxies `/api` and `/public` to port 8080.
+
+---
+
+## 16. Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
@@ -449,11 +538,16 @@ All data is stored locally in `backend/data/nova.db` (SQLite). Nothing is sent t
 | Nova says she can't search | Make sure `BRAVE_SEARCH_API_KEY` is set in `backend/.env` and restart |
 | Avatar shows placeholder | Place `nova-face.jpg` (or `.png`) in `frontend/public/` |
 | No voice output (TTS) | Click anywhere on the page first (autoplay policy requires interaction), then send a message |
-| TTS cuts off mid-sentence | Already mitigated by sentence chunking. If it persists, try shorter messages |
-| Gmail/Calendar not working | Visit `http://localhost:8000/api/google/auth` to authorize, ensure APIs are enabled in Google Cloud |
-| Google token expired | Visit `http://localhost:8000/api/google/auth` to re-authorize |
+| TTS not using Aria voice | Make sure the TTS service is running on port 8002. Check `GET /api/tts/status` |
+| TTS cuts off mid-sentence | Already mitigated by sentence chunking in browser TTS. Server TTS does not have this issue |
+| No TTS on iPhone | Server TTS (MP3) is required for iOS. Make sure the TTS service is running |
+| Gmail/Calendar not working | Visit `http://localhost:8080/api/google/auth` to authorize (use HTTP port), ensure APIs are enabled in Google Cloud |
+| Google token expired | Visit `http://localhost:8080/api/google/auth` to re-authorize |
 | Image generation slow | Stable Horde uses community GPUs — queue times vary. Check backend terminal for progress |
 | Image generation fails | Stable Horde may be under heavy load. Try again in a few minutes |
 | Push notifications not arriving | Make sure ntfy app is installed and subscribed to the same topic as in `.env` |
 | Scheduled messages not appearing | Backend must be running at 8 AM / 10 PM for cron jobs to fire |
 | Mode switch doesn't take effect | Switching modes resets the chat — this is expected behavior |
+| Mobile can't access Nova | Use `https://{your-ip}:8000`. Accept the self-signed certificate warning in Safari |
+| Mic not working on iPhone | Mic requires HTTPS — use the port 8000 URL, not port 5173 |
+| SSL certificate warning | Expected for self-signed certs. In Safari: tap "Show Details" then "visit this website" |

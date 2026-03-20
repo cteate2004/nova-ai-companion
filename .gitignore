@@ -4,6 +4,9 @@ backend/data/
 dist/
 .vite/
 
+# SSL certificates
+backend/*.pem
+
 # Google OAuth credentials and tokens (sensitive)
 backend/google-credentials.json
 backend/client_secret_*.json

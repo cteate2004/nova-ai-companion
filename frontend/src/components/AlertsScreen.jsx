@@ -66,7 +66,7 @@ export default function AlertsScreen({ authToken }) {
         const res = await fetch('/api/scheduled-messages', {
           method: 'POST',
           headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type, enabled: true, send_time: currentTime || '08:00' }),
+          body: JSON.stringify({ type, time: currentTime || (type === 'good_morning' ? '08:00' : '22:00') }),
         });
         if (res.ok) {
           const created = await res.json();
@@ -85,7 +85,7 @@ export default function AlertsScreen({ authToken }) {
       const res = await fetch(`/api/scheduled-messages/${existing.id}`, {
         method: 'PATCH',
         headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ send_time: newTime }),
+        body: JSON.stringify({ time: newTime }),
       });
       if (res.ok) {
         const updated = await res.json();
@@ -107,7 +107,7 @@ export default function AlertsScreen({ authToken }) {
       const res = await fetch('/api/special-dates', {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, date, days_before: parseInt(newDateDaysBefore) || 3 }),
+        body: JSON.stringify({ name, date, remind_days_before: parseInt(newDateDaysBefore) || 3 }),
       });
       if (res.ok) {
         const created = await res.json();
@@ -161,13 +161,13 @@ export default function AlertsScreen({ authToken }) {
                   <input
                     type="time"
                     className="time-input"
-                    value={morningMsg?.send_time || '08:00'}
+                    value={morningMsg?.time || '08:00'}
                     onChange={e => handleTimeChange('good_morning', e.target.value)}
                   />
                 )}
                 <button
                   className={`toggle-switch ${morningMsg?.enabled ? 'on' : ''}`}
-                  onPointerDown={() => handleToggleScheduled('good_morning', morningMsg?.enabled, morningMsg?.send_time)}
+                  onPointerDown={() => handleToggleScheduled('good_morning', morningMsg?.enabled, morningMsg?.time)}
                   aria-label="Toggle good morning message"
                 />
               </div>
@@ -181,13 +181,13 @@ export default function AlertsScreen({ authToken }) {
                   <input
                     type="time"
                     className="time-input"
-                    value={nightMsg?.send_time || '22:00'}
+                    value={nightMsg?.time || '22:00'}
                     onChange={e => handleTimeChange('good_night', e.target.value)}
                   />
                 )}
                 <button
                   className={`toggle-switch ${nightMsg?.enabled ? 'on' : ''}`}
-                  onPointerDown={() => handleToggleScheduled('good_night', nightMsg?.enabled, nightMsg?.send_time)}
+                  onPointerDown={() => handleToggleScheduled('good_night', nightMsg?.enabled, nightMsg?.time)}
                   aria-label="Toggle good night message"
                 />
               </div>
@@ -208,7 +208,7 @@ export default function AlertsScreen({ authToken }) {
                     <div className="date-name">{sd.name}</div>
                     <div className="date-detail">
                       {sd.date}
-                      {sd.days_before != null && ` · Remind ${sd.days_before}d before`}
+                      {sd.remind_days_before != null && ` · Remind ${sd.remind_days_before}d before`}
                     </div>
                   </div>
                   <button className="task-delete" onPointerDown={() => handleDeleteDate(sd.id)}>×</button>
@@ -262,7 +262,7 @@ export default function AlertsScreen({ authToken }) {
                   <span className="mood-emoji">{moodEmoji(entry.mood)}</span>
                   <span className="mood-text">{entry.mood}{entry.note ? ` — ${entry.note}` : ''}</span>
                   <span className="mood-time">
-                    {entry.recorded_at ? new Date(entry.recorded_at).toLocaleString() : ''}
+                    {entry.timestamp ? new Date(entry.timestamp).toLocaleString() : ''}
                   </span>
                 </div>
               ))

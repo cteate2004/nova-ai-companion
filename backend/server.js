@@ -222,12 +222,14 @@ app.get('/oauth2callback', async (req, res) => {
   try {
     await googleAuth.handleCallback(code);
     res.send(`
-      <html><body style="background:#0a0a0f;color:#00d4aa;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+      <html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+      <body style="background:linear-gradient(160deg,#1a1a2e,#16213e,#0f3460,#533483);color:#e0d0ff;font-family:-apple-system,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
         <div style="text-align:center">
-          <h1>✅ Google Connected!</h1>
-          <p>Gmail and Calendar are now linked to Nova.</p>
-          <p>You can close this tab and go back to chatting.</p>
+          <h1 style="font-weight:300">✅ Google Connected!</h1>
+          <p style="color:rgba(200,180,240,0.6)">Gmail and Calendar are now linked to Nova.</p>
+          <p style="color:rgba(200,180,240,0.4);margin-top:16px">Redirecting back...</p>
         </div>
+        <script>setTimeout(function(){ window.location.href = '/'; }, 1500);</script>
       </body></html>
     `);
   } catch (err) {

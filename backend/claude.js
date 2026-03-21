@@ -5,6 +5,7 @@ const flights = require('./flights');
 const rentals = require('./rentals');
 const { isAuthorized } = require('./google-auth');
 const db = require('./database');
+const budget = require('./budget');
 
 const client = new Anthropic();
 
@@ -233,6 +234,49 @@ const ALWAYS_TOOLS = [
     description: 'Get the current grocery list grouped by category.',
     input_schema: { type: 'object', properties: {} },
   },
+  {
+    name: 'get_budget_items',
+    description: 'Get all budget items for the current month including bills, income, and expenses with their amounts, due dates, and paid status.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'mark_budget_item_paid',
+    description: 'Mark a budget item as paid. Use get_budget_items first to find the item ID.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        item_id: { type: 'number', description: 'The budget item ID' },
+        actual_amount: { type: 'number', description: 'The actual amount paid (if different from budgeted amount)' },
+      },
+      required: ['item_id'],
+    },
+  },
+  {
+    name: 'get_upcoming_bills',
+    description: 'Get unpaid bills due in the next 7 days and any overdue unpaid bills.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'add_budget_item',
+    description: 'Add a new item to the current month budget.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        description: { type: 'string', description: 'Item description (e.g. "Electric bill")' },
+        amount: { type: 'number', description: 'Budgeted amount' },
+        due_date: { type: 'string', description: 'Due date in YYYY-MM-DD format. Defaults to end of current month if omitted.' },
+        item_type: { type: 'string', enum: ['income', 'expense'], description: 'Whether this is income or expense' },
+        category: { type: 'string', description: 'Category name (e.g. "Utilities", "Groceries"). Resolved to ID automatically.' },
+        account: { type: 'string', description: 'Account name (e.g. "Checking", "Credit Card"). Resolved to ID automatically.' },
+      },
+      required: ['description', 'amount', 'item_type'],
+    },
+  },
+  {
+    name: 'get_budget_summary',
+    description: 'Get a summary of the current month budget showing totals for budgeted vs actual income and expenses, and remaining balance.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
 ];
 
 const GOOGLE_TOOLS = [
@@ -396,6 +440,16 @@ async function executeTool(name, input) {
       }
       case 'get_grocery_list':
         return db.getGroceryItems();
+      case 'get_budget_items':
+        return await budget.getBudgetItems();
+      case 'mark_budget_item_paid':
+        return await budget.markItemPaid(input.item_id, input.actual_amount);
+      case 'get_upcoming_bills':
+        return await budget.getUpcoming();
+      case 'add_budget_item':
+        return await budget.addBudgetItem(input);
+      case 'get_budget_summary':
+        return await budget.getBudgetSummary();
       case 'create_special_date':
         return db.createSpecialDate(input.name, input.date, input.remind_days_before || 3);
     }

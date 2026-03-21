@@ -832,3 +832,334 @@ body {
   color: var(--text-muted);
   margin-top: 8px;
 }
+
+/* ===== TASKS SCREEN ===== */
+.task-group {
+  margin-bottom: 8px;
+}
+
+.task-list-card {
+  background: var(--glass);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.task-item:last-child {
+  border-bottom: none;
+}
+.task-item.completed .task-title {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.task-checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: none;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.task-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-title {
+  font-size: 15px;
+  color: var(--text);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-due {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.task-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.reminder-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Section headers in screens */
+.section-title {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 16px 20px 8px;
+}
+
+/* Floating add button */
+.fab {
+  position: fixed;
+  bottom: calc(var(--tab-height) + 16px);
+  right: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #1a1a2e;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.3);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Task add overlay */
+.task-add-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 45;
+  display: flex;
+  align-items: flex-end;
+}
+
+.task-add-sheet {
+  width: 100%;
+  background: var(--bg-mid);
+  border-top: 1px solid var(--glass-border);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 0 32px;
+}
+
+/* Loading state */
+.screen-loading {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Inline add forms */
+.inline-add {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+}
+
+.inline-input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+}
+.inline-input:focus {
+  border-color: var(--accent);
+}
+.inline-input option {
+  background: var(--bg-mid);
+  color: var(--text);
+}
+
+.inline-submit {
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #1a1a2e;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== ALERTS SCREEN ===== */
+
+/* Toggle switch */
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.toggle-row:last-child {
+  border-bottom: none;
+}
+
+.toggle-label {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.toggle-switch {
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  position: relative;
+  cursor: pointer;
+  transition: background 200ms;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.toggle-switch.on {
+  background: var(--accent);
+}
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 200ms;
+}
+.toggle-switch.on::after {
+  transform: translateX(20px);
+}
+
+/* Time input inside toggle row */
+.time-input {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  width: 90px;
+}
+.time-input:focus {
+  border-color: var(--accent);
+}
+
+/* Special dates */
+.date-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.date-item:last-of-type {
+  border-bottom: none;
+}
+
+.date-info {
+  flex: 1;
+}
+
+.date-name {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.date-detail {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Mood history */
+.mood-entry {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.mood-entry:last-child {
+  border-bottom: none;
+}
+
+.mood-emoji {
+  font-size: 20px;
+}
+
+.mood-text {
+  font-size: 14px;
+  color: var(--text);
+  margin-left: 8px;
+}
+
+.mood-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 4px;
+}
+
+/* ===== SETTINGS SCREEN ===== */
+.settings-group {
+  margin-bottom: 8px;
+}
+
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.settings-item:last-child {
+  border-bottom: none;
+}
+
+.settings-item-label {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.settings-item-value {
+  font-size: 14px;
+  color: var(--text-dim);
+  text-align: right;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--accent);
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}

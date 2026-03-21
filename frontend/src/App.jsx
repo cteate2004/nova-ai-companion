@@ -133,11 +133,11 @@ function NovaApp({ authToken, onLogout }) {
           />
         );
       case 'tasks':
-        return <TasksScreen />;
+        return <TasksScreen authToken={authToken} />;
       case 'alerts':
-        return <AlertsScreen />;
+        return <AlertsScreen authToken={authToken} />;
       case 'settings':
-        return <SettingsScreen />;
+        return <SettingsScreen authToken={authToken} />;
       default:
         return null;
     }

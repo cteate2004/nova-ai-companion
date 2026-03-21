@@ -5,6 +5,7 @@ import ChatPanel from './components/ChatPanel';
 import TasksScreen from './components/TasksScreen';
 import AlertsScreen from './components/AlertsScreen';
 import SettingsScreen from './components/SettingsScreen';
+import MemoryScreen from './components/MemoryScreen';
 import ParticleBackground from './components/ParticleBackground';
 import LoginScreen from './components/LoginScreen';
 import useChat from './hooks/useChat';
@@ -44,6 +45,7 @@ export default function App() {
 
 function NovaApp({ authToken, onLogout }) {
   const [activeTab, setActiveTab] = useState('home');
+  const [settingsSubScreen, setSettingsSubScreen] = useState(null);
   const { messages, sendMessage, isStreaming, currentEmotion, connected } = useChat(authToken);
   const { displayEmotion, isBlinking, mouthOpen, startTalking, stopTalking, setDisplayEmotion } = useAvatar(currentEmotion);
   const lastAssistantMsg = useRef('');
@@ -98,6 +100,10 @@ function NovaApp({ authToken, onLogout }) {
     wasStreaming.current = isStreaming;
   }, [isStreaming]);
 
+  useEffect(() => {
+    setSettingsSubScreen(null);
+  }, [activeTab]);
+
   const handleMicToggle = useCallback(() => {
     if (voice.isListening) {
       voice.stopListening();
@@ -138,7 +144,10 @@ function NovaApp({ authToken, onLogout }) {
       case 'alerts':
         return <AlertsScreen authToken={authToken} />;
       case 'settings':
-        return <SettingsScreen authToken={authToken} />;
+        if (settingsSubScreen === 'memory') {
+          return <MemoryScreen authToken={authToken} onBack={() => setSettingsSubScreen(null)} />;
+        }
+        return <SettingsScreen authToken={authToken} onNavigate={setSettingsSubScreen} />;
       default:
         return null;
     }

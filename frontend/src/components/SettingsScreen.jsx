@@ -58,13 +58,14 @@ async function subscribePush(authToken) {
   }
 }
 
-export default function SettingsScreen({ authToken }) {
+export default function SettingsScreen({ authToken, onNavigate }) {
   const [googleStatus, setGoogleStatus] = useState(null);
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
   const [location, setLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationSaved, setLocationSaved] = useState(false);
+  const [memoryCount, setMemoryCount] = useState(0);
 
   const headers = { Authorization: `Bearer ${authToken}` };
 
@@ -83,6 +84,7 @@ export default function SettingsScreen({ authToken }) {
 
   useEffect(() => {
     fetchGoogleStatus();
+    fetch('/api/memory', { headers }).then(r => r.json()).then(d => setMemoryCount(Array.isArray(d) ? d.length : 0)).catch(() => {});
 
     // Check if push already granted
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -231,6 +233,24 @@ export default function SettingsScreen({ authToken }) {
           >
             {locationLoading ? 'Getting location…' : 'Use Current Location'}
           </button>
+        </div>
+      </div>
+
+      {/* Memories */}
+      <div className="section-title">Memories</div>
+      <div className="task-list-card settings-group">
+        <div className="settings-item">
+          <button
+            className="settings-btn"
+            onPointerDown={() => onNavigate && onNavigate('memory')}
+          >
+            Manage Memories ({memoryCount})
+          </button>
+        </div>
+        <div className="settings-item">
+          <span className="settings-item-label" style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            View and edit what Nova remembers about you
+          </span>
         </div>
       </div>
 

@@ -1,6 +1,5 @@
-const CACHE_NAME = 'nova-v1';
+const CACHE_NAME = 'nova-v2';
 const STATIC_ASSETS = [
-  '/',
   '/manifest.json',
   '/nova-face.jpg',
 ];
@@ -23,6 +22,14 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('/api/')) return;
+  // HTML pages: network-first so updates load immediately
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/'))
+    );
+    return;
+  }
+  // Static assets: cache-first
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );

@@ -134,6 +134,27 @@ app.get('/api/memory', (req, res) => {
   res.json(memories);
 });
 
+app.patch('/api/memory/:id', (req, res) => {
+  const { fact, category } = req.body;
+  if (fact !== undefined && !fact.trim()) {
+    return res.status(400).json({ error: 'fact cannot be empty' });
+  }
+  const updates = {};
+  if (fact !== undefined) updates.fact = fact.trim();
+  if (category !== undefined) updates.category = category;
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'No valid fields provided' });
+  }
+  const result = db.updateMemory(req.params.id, updates);
+  if (!result) return res.status(404).json({ error: 'Memory not found' });
+  res.json(result);
+});
+
+app.delete('/api/memory/:id', (req, res) => {
+  db.deleteMemory(req.params.id);
+  res.json({ ok: true });
+});
+
 // POST /api/transcribe — Whisper speech-to-text
 app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
   if (!req.file) {

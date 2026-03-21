@@ -163,7 +163,7 @@ function saveMemory(fact, category) {
 
 function getMemories() {
   const stmt = db.prepare(
-    'SELECT fact, category, created_at FROM memories ORDER BY created_at DESC'
+    'SELECT id, fact, category, created_at, last_referenced FROM memories ORDER BY created_at DESC'
   );
 
   const rows = [];
@@ -173,6 +173,33 @@ function getMemories() {
   stmt.free();
 
   return rows;
+}
+
+function updateMemory(id, updates) {
+  const allowed = ['fact', 'category'];
+  const fields = [];
+  const values = [];
+  for (const [key, val] of Object.entries(updates)) {
+    if (allowed.includes(key)) {
+      fields.push(`${key} = ?`);
+      values.push(val);
+    }
+  }
+  if (fields.length === 0) return null;
+  values.push(id);
+  db.run(`UPDATE memories SET ${fields.join(', ')} WHERE id = ?`, values);
+  persist();
+  const stmt = db.prepare('SELECT id, fact, category, created_at, last_referenced FROM memories WHERE id = ?');
+  stmt.bind([id]);
+  if (!stmt.step()) { stmt.free(); return null; }
+  const row = stmt.getAsObject();
+  stmt.free();
+  return row;
+}
+
+function deleteMemory(id) {
+  db.run('DELETE FROM memories WHERE id = ?', [id]);
+  persist();
 }
 
 // --- Tasks ---
@@ -349,6 +376,10 @@ function createScheduledMessage(type, time) {
 }
 
 function updateScheduledMessage(id, updates) {
+  // If time is being changed, reset last_sent so it fires at the new time today
+  if (updates.time && !('last_sent' in updates)) {
+    updates.last_sent = null;
+  }
   const fields = [];
   const values = [];
   for (const [key, val] of Object.entries(updates)) {
@@ -456,6 +487,8 @@ module.exports = {
   getMessageCount,
   saveMemory,
   getMemories,
+  updateMemory,
+  deleteMemory,
   // Tasks
   getTasks,
   createTask,

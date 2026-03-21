@@ -22,15 +22,16 @@ This gives you:
 
 ## 2. Navigation
 
-Nova has 5 tabs at the bottom of the screen:
+Nova has 6 tabs at the bottom of the screen (icon-only):
 
 | Tab | Icon | Purpose |
 |-----|------|---------|
 | **Nova** | 👩 | Home screen — avatar, quick actions, dashboard cards |
 | **Chat** | 💬 | Full conversation with Nova |
 | **Tasks** | 📋 | To-do lists, shopping lists, reminders, expenses |
+| **Grocery** | 🛒 | Grocery list with categories, print, share |
 | **Alerts** | 🔔 | Scheduled messages, special dates, mood history |
-| **Settings** | ⚙️ | Google connection, notifications, location |
+| **Settings** | ⚙️ | Google connection, notifications, memories, location |
 
 ### Home Screen
 - **Hero Avatar** — Nova's photo with emotion-based glow
@@ -48,13 +49,16 @@ Nova has 5 tabs at the bottom of the screen:
 4. Nova's response streams in real-time
 
 ### Image Messages
-Tap the 📷 button next to the text input to attach a photo. Nova can see and discuss images.
+- Tap the 📷 button to take a photo with your camera
+- Tap the 🖼️ button to choose an existing photo from your library
+Nova can see and discuss images.
 
 ### What You Can Ask
 Nova is your AI girlfriend assistant. She can:
 
 **Daily tasks:**
 - "Add milk to my shopping list"
+- "Add milk, eggs, and bread to my grocery list"
 - "Remind me to call mom at 5pm"
 - "I spent $45 on dinner"
 - "What's the weather like?"
@@ -143,7 +147,34 @@ The emotion text also shows on the Home screen: "feeling happy 💜"
 - View summary in the Tasks tab
 - Ask Nova: "How much have I spent this month?"
 
-## 7. Alerts & Scheduled Messages
+## 7. Grocery List
+
+### Adding Items
+**Via chat:** "Add milk, eggs, and bread to my grocery list"
+- Nova auto-categorizes items (milk -> Dairy, bread -> Bakery, etc.)
+- You can also say "check off milk" or "remove bread from grocery list"
+
+**Via Grocery tab:** Tap the **+** button
+- Enter item name (category auto-selects as you type)
+- Optionally add quantity (e.g. "2 lbs")
+- Change category if needed
+
+### While Shopping
+- Tap the circle to check off items as you get them
+- Checked items show with strikethrough
+- Tap **Clear Checked** when done shopping
+- Tap **Clear All** to start a fresh list for next trip
+
+### Printing Your List
+Tap the printer icon in the header. On iPhone this opens the AirPrint dialog — select your printer and print a clean formatted list (unchecked items only, grouped by category).
+
+### Sharing Your List
+Tap the share icon in the header. On iPhone this opens the native share sheet where you can send via Messages, Mail, AirDrop, Notes, or any other app.
+
+### Categories
+Items are automatically grouped into: Produce, Dairy, Meat & Seafood, Bakery, Frozen, Pantry, Beverages, Snacks, Household, Other.
+
+## 8. Alerts & Scheduled Messages
 
 ### Good Morning / Good Night Messages
 1. Go to **Alerts** tab
@@ -167,7 +198,7 @@ Nova randomly sends sweet push notifications 1-5x per day during waking hours (8
 ### Mood History
 Nova tracks your mood when you share how you're feeling. View the history in Alerts tab. She notices patterns: "You've seemed stressed this week — want to talk about it?"
 
-## 8. Settings
+## 9. Settings
 
 ### Google Account
 - Shows connection status (✓ Connected / Not connected)
@@ -183,7 +214,7 @@ Nova tracks your mood when you share how you're feeling. View the history in Ale
 - Tap **Use Current Location** to set your location for weather
 - Used by the Weather card on Home screen and Nova's weather tool
 
-## 9. Memory System
+## 10. Memory System
 
 Nova automatically remembers details about you.
 
@@ -199,6 +230,15 @@ Nova automatically remembers details about you.
 - Important events and dates
 - Relationship details and inside jokes
 
+### Managing Memories
+1. Go to **Settings** tab
+2. Tap **Manage Memories (N)** — the number shows how many memories Nova has
+3. Browse memories grouped by category (Personal, Preferences, Work, Interests, Relationship, Events)
+4. **Edit:** Tap any memory text to edit it inline. Press Enter to save, Escape to cancel.
+5. **Delete:** Tap the × button on a memory. Confirm to remove it from Nova's knowledge.
+
+This is useful if Nova has remembered something incorrectly or you want her to forget something specific (e.g. details about an ex).
+
 ### Data Storage
 All data is stored locally in `backend/data/nova.db` (SQLite). Nothing is sent to third parties except:
 - Claude API (for conversation)
@@ -206,7 +246,7 @@ All data is stored locally in `backend/data/nova.db` (SQLite). Nothing is sent t
 - Google APIs (if connected, for email/calendar)
 - Push services (Apple/Google, for notifications)
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Problem | Solution |
 |---------|----------|

@@ -1,5 +1,38 @@
 # Changelog
 
+## [2.1.0] - 2026-03-21
+
+### Added — Grocery List
+- **Grocery Tab (🛒):** Dedicated grocery list screen with 10 category groupings (Produce, Dairy, Meat & Seafood, Bakery, Frozen, Pantry, Beverages, Snacks, Household, Other).
+- **Auto-Categorization:** Items automatically sorted into categories based on keyword matching (e.g. "milk" -> Dairy, "chicken breast" -> Meat & Seafood). Multi-word keywords matched first for accuracy.
+- **Chat Integration:** 4 new Claude tools — `add_grocery_items`, `check_grocery_items`, `remove_grocery_items`, `get_grocery_list`. Say "add milk, eggs, and bread to my grocery list" via voice or text.
+- **Print (AirPrint):** Print button formats a clean list (unchecked items only, grouped by category) and opens the native iOS print dialog.
+- **Share:** Share button uses Web Share API (native iOS share sheet) with SMS/email fallback for browsers without support.
+- **Clear Actions:** Clear checked items after shopping, or clear all to start a new trip (with confirmation).
+- **Auto-Refresh:** Grocery list re-fetches when tab becomes active, picking up items added via chat.
+
+### Added — Memory Management
+- **Manage Memories Screen:** New sub-screen in Settings showing everything Nova remembers, grouped by category (Personal, Preferences, Work, Interests, Relationship, Events).
+- **Edit Memories:** Tap any memory to edit inline. Saves on Enter/blur, cancels on Escape.
+- **Delete Memories:** Delete individual memories with confirmation prompt.
+- **Memory Count Badge:** Settings shows "Manage Memories (N)" with current count.
+- **Optimistic UI:** Edit and delete update immediately with rollback on API failure.
+
+### Added — Photo Gallery
+- **Gallery Picker:** New 🖼️ button in chat input for choosing existing photos from library, alongside the existing 📷 camera button.
+
+### Fixed
+- **TTS Emoji Stripping:** Emojis are now stripped from text before sending to EdgeTTS, so Nova no longer reads out emoji names like "purple heart" or "sun with face". Uses Unicode `\p{Extended_Pictographic}` regex.
+- **Stale Push Subscription Cleanup:** Push subscriptions with `VapidPkHashMismatch` (400 error) are now auto-removed, not just 410 Gone.
+- **Scheduled Message Time Change:** Changing a scheduled message's time now resets `last_sent` to null, ensuring it fires at the new time on the same day.
+- **Missed Scheduled Messages:** Scheduler now uses catch-up firing (`currentTime >= s.time`) instead of exact-minute matching, so messages fire even if the server restarts or the schedule is set after the target minute.
+
+### Changed
+- **Tab Bar:** Now 6 tabs (added Grocery) with icon-only display (labels removed) to fit on smaller iPhone screens.
+- **Database:** Added `grocery_items` table (10th table). Added `updateMemory`, `deleteMemory` functions. Fixed `getMemories` to include `id` field.
+- **API:** 8 new endpoints (6 grocery + 2 memory edit/delete). TTS endpoint now strips emojis.
+- **Claude Tools:** 18 total (was 14). Added 4 grocery tools.
+
 ## [2.0.0] - 2026-03-21
 
 ### Added — iPhone Redesign

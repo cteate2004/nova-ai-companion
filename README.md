@@ -15,7 +15,7 @@ A personal AI girlfriend assistant with voice interaction, persistent memory, pu
 
 ### iPhone Redesign (v2.0)
 - **Midnight Luxe Theme** — Navy-to-purple gradient, lavender/blue accents, glass morphism. No flat black.
-- **5-Tab Navigation** — Home, Chat, Tasks, Alerts, Settings with bottom tab bar
+- **6-Tab Navigation** — Home, Chat, Tasks, Grocery, Alerts, Settings with icon-only bottom tab bar
 - **PWA** — Add to Home Screen for native app feel, standalone mode, push notifications
 - **Hero Avatar** — 160px hero on Home screen, collapses to 36px in Chat header
 - **Mobile Polish** — Safe areas, 16px fonts (no Safari zoom), momentum scrolling, 72px touch targets
@@ -41,6 +41,19 @@ A personal AI girlfriend assistant with voice interaction, persistent memory, pu
 - **Shopping Lists** — Separate list for shopping items
 - **Expense Tracking** — Log expenses via chat, view summaries by category
 - **Quick Timers** — Set timers with push notification on completion
+
+### Grocery List
+- **Dedicated Tab** — Full grocery list screen with category grouping (Produce, Dairy, Meat & Seafood, Bakery, Frozen, Pantry, Beverages, Snacks, Household, Other)
+- **Auto-Categorization** — Items automatically sorted into categories (e.g. "milk" -> Dairy, "chicken" -> Meat & Seafood)
+- **Chat Integration** — "Add milk, eggs, and bread to my grocery list" via voice or text
+- **Check & Clear** — Check off items while shopping, clear checked or clear all for new trips
+- **Print** — AirPrint via iOS print dialog (formats a clean printable list)
+- **Share** — Native iOS share sheet (Messages, Mail, AirDrop, etc.) via Web Share API
+
+### Memory Management
+- **View Memories** — Settings > Manage Memories shows everything Nova remembers about you
+- **Edit & Delete** — Tap to edit any memory, delete individual memories
+- **Grouped by Category** — Personal, Preferences, Work, Interests, Relationship, Events
 
 ## Tech Stack
 
@@ -127,8 +140,8 @@ http:
 nova/
 ├── backend/
 │   ├── server.js          # Express routes, SSE streaming, API endpoints
-│   ├── claude.js          # Claude integration, 14 tools, personality prompt
-│   ├── database.js        # SQLite (9 tables, CRUD functions)
+│   ├── claude.js          # Claude integration, 18 tools, personality prompt
+│   ├── database.js        # SQLite (10 tables, CRUD functions)
 │   ├── memory.js          # Fact extraction every 5 messages
 │   ├── scheduler.js       # Cron: reminders, scheduled messages, nudges
 │   ├── push.js            # Web Push with VAPID keys
@@ -154,12 +167,14 @@ nova/
 │       ├── App.jsx        # Auth + tab router
 │       ├── main.jsx       # Entry + error boundary + SW registration
 │       ├── components/
-│       │   ├── TabBar.jsx        # 5-tab bottom navigation
+│       │   ├── TabBar.jsx        # 6-tab icon-only bottom navigation
 │       │   ├── HomeScreen.jsx    # Hero avatar, quick actions, cards
 │       │   ├── ChatPanel.jsx     # Full-screen chat with collapsed header
 │       │   ├── TasksScreen.jsx   # Tasks, reminders, expenses
 │       │   ├── AlertsScreen.jsx  # Scheduled messages, dates, mood
-│       │   ├── SettingsScreen.jsx # Google, push, location, about
+│       │   ├── SettingsScreen.jsx # Google, push, location, memories, about
+│       │   ├── GroceryScreen.jsx  # Grocery list with categories, print, share
+│       │   ├── MemoryScreen.jsx   # Memory management (view/edit/delete)
 │       │   ├── Avatar.jsx        # Photo avatar (hero/collapsed)
 │       │   ├── WeatherCard.jsx   # Home screen weather
 │       │   ├── EventCard.jsx     # Home screen upcoming reminder
@@ -174,7 +189,7 @@ nova/
 │       │   ├── useVoice.js  # Whisper STT + EdgeTTS playback
 │       │   └── useAvatar.js # Emotion state, blink, mouth animation
 │       └── styles/
-│           └── global.css   # Midnight Luxe theme (~900 lines)
+│           └── global.css   # Midnight Luxe theme (~1400 lines)
 ├── tts/                    # EdgeTTS service (separate)
 ├── docs/
 │   ├── TRAINING.md         # User training manual
@@ -197,6 +212,7 @@ nova/
 | mood_logs | Mood entries with timestamps |
 | special_dates | Anniversaries and birthdays |
 | push_subscriptions | Web Push subscription endpoints |
+| grocery_items | Grocery list with categories |
 
 ## API Endpoints
 
@@ -212,8 +228,10 @@ nova/
 | POST | /api/chat | Send message, receive SSE stream |
 | GET | /api/history/:session_id | Get message history |
 | GET | /api/memory | Get stored memories |
+| PATCH | /api/memory/:id | Update a memory |
+| DELETE | /api/memory/:id | Delete a memory |
 | POST | /api/transcribe | Speech-to-text (Whisper) |
-| POST | /api/tts | Text-to-speech (EdgeTTS) |
+| POST | /api/tts | Text-to-speech (emoji-stripped) |
 
 ### Tasks & Reminders
 | Method | Endpoint | Description |
@@ -238,6 +256,16 @@ nova/
 | GET/POST | /api/special-dates | Manage special dates |
 | DELETE | /api/special-dates/:id | Delete special date |
 
+### Grocery
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/grocery | List all grocery items |
+| POST | /api/grocery | Add grocery item |
+| PATCH | /api/grocery/:id | Update grocery item |
+| DELETE | /api/grocery/:id | Delete grocery item |
+| POST | /api/grocery/clear-checked | Clear checked items |
+| POST | /api/grocery/clear-all | Clear entire list |
+
 ### Push & Weather
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -256,7 +284,7 @@ nova/
 
 ## Claude Tools
 
-Nova has 14 tools available during conversation:
+Nova has 18 tools available during conversation:
 
 | Tool | Description |
 |------|-------------|
@@ -272,11 +300,15 @@ Nova has 14 tools available during conversation:
 | search_web | General web search |
 | log_mood | Record user's mood |
 | create_special_date | Save anniversaries and important dates |
+| add_grocery_items | Add items to grocery list (auto-categorizes) |
+| check_grocery_items | Check off grocery items by name |
+| remove_grocery_items | Remove grocery items by name |
+| get_grocery_list | Get current grocery list |
 
 ## Current Status (v2.0)
 
 - [x] Midnight Luxe theme (navy-to-purple gradient)
-- [x] 5-tab navigation (Home, Chat, Tasks, Alerts, Settings)
+- [x] 6-tab icon-only navigation (Home, Chat, Tasks, Grocery, Alerts, Settings)
 - [x] PWA with manifest and service worker
 - [x] Push notifications (VAPID + Apple Web Push)
 - [x] Hero/collapsed avatar system
@@ -291,6 +323,18 @@ Nova has 14 tools available during conversation:
 - [x] Mobile polish (safe areas, scroll, transitions)
 - [x] Google OAuth auto-redirect back to app
 - [x] iPhone-optimized font sizes (16px min)
+
+### v2.1 (2026-03-21)
+- [x] Grocery list with 10 categories and auto-categorization
+- [x] Grocery chat integration (4 new Claude tools)
+- [x] Print grocery list via AirPrint (browser print dialog)
+- [x] Share grocery list via Web Share API / SMS / Email
+- [x] Memory management screen (view, edit, delete memories)
+- [x] TTS emoji stripping (no more "purple heart" spoken aloud)
+- [x] Photo gallery picker (choose existing photos, not just camera)
+- [x] Stale push subscription auto-cleanup (VapidPkHashMismatch)
+- [x] Scheduled message time-change fix (reset last_sent on reschedule)
+- [x] Catch-up firing for missed scheduled messages
 
 ### Known Areas for Future Improvement
 - Claude-generated scheduled messages (currently hardcoded text)

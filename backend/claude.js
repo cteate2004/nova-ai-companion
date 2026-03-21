@@ -38,7 +38,7 @@ Valid emotions: neutral, happy, flirty, concerned, excited, thoughtful, laughing
 
 Choose the emotion that best matches your tone in that specific response. Use "flirty" when you're being playful/teasing/complimentary. Use it naturally — not every message.
 
-You also have tools for managing tasks, reminders, expenses, weather, restaurant search, web search, mood tracking, and special dates. Use them naturally when the conversation calls for it. When the user mentions spending money, log it. When they share feelings, log the mood. When they mention an important date, save it.`;
+You also have tools for managing tasks, reminders, expenses, weather, restaurant search, web search, mood tracking, special dates, and grocery list. Use them naturally when the conversation calls for it. When the user mentions spending money, log it. When they share feelings, log the mood. When they mention an important date, save it. When the user wants to add items to their grocery list, use the grocery tools.`;
 
 const ALWAYS_TOOLS = [
   {
@@ -183,6 +183,55 @@ const ALWAYS_TOOLS = [
       },
       required: ['name', 'date'],
     },
+  },
+  {
+    name: 'add_grocery_items',
+    description: 'Add items to the grocery list. Auto-categorizes based on item name if no category provided.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: 'Item name' },
+              quantity: { type: 'string', description: 'Optional quantity/unit (e.g. "2 lbs", "1 gallon")' },
+              category: { type: 'string', description: 'Optional category override: Produce, Dairy, Meat & Seafood, Bakery, Frozen, Pantry, Beverages, Snacks, Household, Other' },
+            },
+            required: ['name'],
+          },
+        },
+      },
+      required: ['items'],
+    },
+  },
+  {
+    name: 'check_grocery_items',
+    description: 'Check off (mark as done) items from the grocery list by name. Use when user says they got an item.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        items: { type: 'array', items: { type: 'string' }, description: 'Item names to check off' },
+      },
+      required: ['items'],
+    },
+  },
+  {
+    name: 'remove_grocery_items',
+    description: 'Remove items from the grocery list by name.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        items: { type: 'array', items: { type: 'string' }, description: 'Item names to remove' },
+      },
+      required: ['items'],
+    },
+  },
+  {
+    name: 'get_grocery_list',
+    description: 'Get the current grocery list grouped by category.',
+    input_schema: { type: 'object', properties: {} },
   },
 ];
 
@@ -329,6 +378,24 @@ async function executeTool(name, input) {
       }
       case 'log_mood':
         return db.createMoodLog(input.mood, input.note);
+      case 'add_grocery_items': {
+        const added = [];
+        for (const item of input.items) {
+          const result = db.createGroceryItem(item.name, item.category, item.quantity);
+          added.push({ name: result.name, category: result.category });
+        }
+        return { added };
+      }
+      case 'check_grocery_items': {
+        const checked = db.checkGroceryItemsByName(input.items);
+        return { checked };
+      }
+      case 'remove_grocery_items': {
+        const removed = db.removeGroceryItemsByName(input.items);
+        return { removed };
+      }
+      case 'get_grocery_list':
+        return db.getGroceryItems();
       case 'create_special_date':
         return db.createSpecialDate(input.name, input.date, input.remind_days_before || 3);
     }

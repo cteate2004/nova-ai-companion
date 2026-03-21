@@ -71,6 +71,17 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
+  transition: all 400ms ease-in-out;
+}
+
+.avatar-container.hero {
+  width: 160px;
+  height: 160px;
+}
+
+.avatar-container.collapsed {
+  width: 36px;
+  height: 36px;
 }
 
 .avatar-image-wrapper {
@@ -87,7 +98,7 @@ body {
   object-fit: cover;
   object-position: center 15%;
   border-radius: 50%;
-  border: 3px solid var(--accent);
+  border: 3px solid rgba(200,160,255,0.4);
   transition: all 500ms ease-in-out;
   filter: brightness(1) saturate(1);
 }
@@ -96,11 +107,12 @@ body {
   position: absolute;
   inset: -15px;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(200,160,255,1) 0%, transparent 70%);
   opacity: 0.12;
   z-index: -1;
   animation: glowPulse 4s ease-in-out infinite;
   transition: all 500ms ease-in-out;
+  box-shadow: 0 0 40px rgba(200,160,255,0.25);
 }
 
 @keyframes glowPulse {
@@ -112,50 +124,55 @@ body {
 
 /* Listening — brighter glow, slight scale */
 .avatar--listening .avatar-image {
-  border-color: var(--accent);
+  border-color: rgba(200,160,255,0.8);
   filter: brightness(1.05);
   transform: scale(1.02);
 }
 .avatar--listening .avatar-image-glow {
+  background: radial-gradient(circle, rgba(200,160,255,1) 0%, transparent 70%);
   opacity: 0.3;
   animation: listenPulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 40px rgba(200,160,255,0.5);
 }
 @keyframes listenPulse {
   0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.35; }
+  50% { opacity: 0.4; }
 }
 
-/* Thinking — cool tint */
+/* Thinking — cool purple tint */
 .avatar--thinking .avatar-image {
-  border-color: #7c6cf0;
+  border-color: rgba(124,108,240,0.8);
   filter: brightness(0.95) saturate(0.9);
 }
 .avatar--thinking .avatar-image-glow {
-  background: radial-gradient(circle, #7c6cf0 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(124,108,240,1) 0%, transparent 70%);
   opacity: 0.2;
+  box-shadow: 0 0 40px rgba(124,108,240,0.4);
 }
 
-/* Happy — warm glow */
+/* Happy — lavender glow with warm brightness */
 .avatar--happy .avatar-image {
-  border-color: #f0c060;
+  border-color: rgba(200,160,255,0.8);
   filter: brightness(1.1) saturate(1.1);
   transform: scale(1.03);
 }
 .avatar--happy .avatar-image-glow {
-  background: radial-gradient(circle, #f0c060 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(200,160,255,1) 0%, transparent 70%);
   opacity: 0.25;
+  box-shadow: 0 0 40px rgba(200,160,255,0.4);
 }
 
-/* Excited — vibrant pulse */
+/* Excited — vibrant pink pulse */
 .avatar--excited .avatar-image {
-  border-color: #ff6b9d;
+  border-color: rgba(255,107,157,0.8);
   filter: brightness(1.15) saturate(1.2);
   transform: scale(1.05);
 }
 .avatar--excited .avatar-image-glow {
-  background: radial-gradient(circle, #ff6b9d 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,107,157,1) 0%, transparent 70%);
   opacity: 0.3;
   animation: excitedPulse 0.8s ease-in-out infinite;
+  box-shadow: 0 0 40px rgba(255,107,157,0.4);
 }
 @keyframes excitedPulse {
   0%, 100% { opacity: 0.2; transform: scale(1); }
@@ -164,27 +181,29 @@ body {
 
 /* Flirty — warm pink */
 .avatar--flirty .avatar-image {
-  border-color: #e88ca5;
+  border-color: rgba(232,140,165,0.8);
   filter: brightness(1.08) saturate(1.15);
 }
 .avatar--flirty .avatar-image-glow {
-  background: radial-gradient(circle, #e88ca5 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(232,140,165,1) 0%, transparent 70%);
   opacity: 0.25;
+  box-shadow: 0 0 40px rgba(232,140,165,0.4);
 }
 
 /* Concerned — muted */
 .avatar--concerned .avatar-image {
-  border-color: #8899aa;
+  border-color: rgba(136,153,170,0.8);
   filter: brightness(0.9) saturate(0.85);
 }
 .avatar--concerned .avatar-image-glow {
-  background: radial-gradient(circle, #8899aa 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(136,153,170,1) 0%, transparent 70%);
   opacity: 0.15;
+  box-shadow: 0 0 40px rgba(136,153,170,0.4);
 }
 
 /* Laughing — bright and bouncy */
 .avatar--laughing .avatar-image {
-  border-color: #f0c060;
+  border-color: rgba(200,160,255,0.8);
   filter: brightness(1.15) saturate(1.15);
   animation: laughBounce 0.4s ease-in-out infinite;
 }
@@ -194,16 +213,19 @@ body {
   75% { transform: scale(1.04) rotate(-0.5deg); }
 }
 .avatar--laughing .avatar-image-glow {
-  background: radial-gradient(circle, #f0c060 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(200,160,255,1) 0%, transparent 70%);
   opacity: 0.3;
+  box-shadow: 0 0 40px rgba(200,160,255,0.4);
 }
 
 /* Talking — subtle pulse */
 .avatar--talking .avatar-image {
-  border-color: var(--accent);
+  border-color: rgba(200,160,255,0.6);
 }
 .avatar--talking .avatar-image-glow {
+  background: radial-gradient(circle, rgba(200,160,255,1) 0%, transparent 70%);
   animation: talkPulse 0.6s ease-in-out infinite;
+  box-shadow: 0 0 40px rgba(200,160,255,0.3);
 }
 @keyframes talkPulse {
   0%, 100% { opacity: 0.15; }
@@ -217,7 +239,7 @@ body {
   right: 0;
   width: 380px;
   height: 100vh;
-  background: var(--glass);
+  background: rgba(15, 15, 30, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-left: 1px solid var(--glass-border);
@@ -278,23 +300,24 @@ body {
 .chat-bubble {
   max-width: 85%;
   padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 14px;
-  line-height: 1.5;
+  border-radius: 16px;
+  font-size: 16px;
+  line-height: 1.4;
   word-wrap: break-word;
 }
 
 .chat-bubble.user {
   background: var(--bubble-user);
+  border: 1px solid var(--bubble-user-border);
+  border-radius: 16px 16px 4px 16px;
   align-self: flex-end;
-  border-bottom-right-radius: 4px;
 }
 
 .chat-bubble.assistant {
   background: var(--bubble-nova);
-  border-left: 3px solid var(--accent);
+  border: 1px solid var(--bubble-nova-border);
+  border-radius: 16px 16px 16px 4px;
   align-self: flex-start;
-  border-bottom-left-radius: 4px;
   white-space: pre-wrap;
 }
 
@@ -372,7 +395,7 @@ body {
   border-radius: 8px;
   padding: 10px 14px;
   color: var(--text);
-  font-size: 14px;
+  font-size: 16px;
   outline: none;
   transition: border-color 200ms;
 }
@@ -406,9 +429,10 @@ body {
   position: fixed;
   top: 20px;
   right: 20px;
-  background: var(--glass);
+  background: rgba(200, 160, 255, 0.08);
   backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(200, 160, 255, 0.2);
   border-radius: 12px;
   padding: 10px 16px;
   color: var(--text);
@@ -420,6 +444,7 @@ body {
 .chat-toggle:hover {
   border-color: var(--accent);
   color: var(--accent);
+  background: rgba(200, 160, 255, 0.15);
 }
 
 /* Streaming indicator */
@@ -446,10 +471,16 @@ body {
   40% { opacity: 1; transform: scale(1.2); }
 }
 
+/* Message timestamps */
+.chat-timestamp {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 /* Rich links in chat */
 .chat-link {
   display: inline-block;
-  background: rgba(0, 212, 170, 0.15);
+  background: rgba(200, 160, 255, 0.15);
   border: 1px solid var(--accent);
   border-radius: 6px;
   padding: 4px 10px;
@@ -461,7 +492,7 @@ body {
   transition: background 200ms;
 }
 .chat-link:hover {
-  background: rgba(0, 212, 170, 0.3);
+  background: rgba(200, 160, 255, 0.3);
 }
 
 /* ===== MIC BUTTON ===== */
@@ -469,7 +500,7 @@ body {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: rgba(0, 212, 170, 0.1);
+  background: rgba(200, 160, 255, 0.1);
   border: 2px solid var(--accent);
   color: var(--accent);
   cursor: pointer;
@@ -481,17 +512,17 @@ body {
   margin-top: 24px;
 }
 .mic-button:hover {
-  background: rgba(0, 212, 170, 0.2);
+  background: rgba(200, 160, 255, 0.2);
 }
 .mic-button.active {
   background: var(--accent);
   color: var(--bg-start);
-  box-shadow: 0 0 20px rgba(0, 212, 170, 0.5), 0 0 40px rgba(0, 212, 170, 0.2);
+  box-shadow: 0 0 20px rgba(200, 160, 255, 0.5), 0 0 40px rgba(200, 160, 255, 0.2);
   animation: micPulse 1.5s ease-in-out infinite;
 }
 @keyframes micPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 170, 0.5); }
-  50% { box-shadow: 0 0 30px rgba(0, 212, 170, 0.7), 0 0 60px rgba(0, 212, 170, 0.3); }
+  0%, 100% { box-shadow: 0 0 20px rgba(200, 160, 255, 0.5); }
+  50% { box-shadow: 0 0 30px rgba(200, 160, 255, 0.7), 0 0 60px rgba(200, 160, 255, 0.3); }
 }
 
 /* ===== STATUS BAR ===== */

@@ -345,6 +345,12 @@ app.get('/api/weather', async (req, res) => {
   }
 });
 
+app.get('/api/push/vapid-key', (req, res) => {
+  const push = require('./push');
+  const key = push.getPublicKey();
+  res.json({ publicKey: key });
+});
+
 // SPA fallback — serve index.html for non-API routes (Express 5 syntax)
 app.get('{*path}', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
@@ -352,6 +358,7 @@ app.get('{*path}', (req, res) => {
 
 async function start() {
   await db.init();
+  require('./push').initVapid();
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Nova] Backend running on http://0.0.0.0:${PORT}`);
   });

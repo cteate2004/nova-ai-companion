@@ -1,17 +1,21 @@
 import React from 'react';
-import AvatarSVG from './AvatarSVG';
 
-export default function Avatar({ emotion = 'neutral', isBlinking = false, mouthOpen = false }) {
+export default function Avatar({ emotion = 'neutral', isBlinking = false, mouthOpen = false, size }) {
   const classes = [
     'avatar-container',
     `avatar--${emotion}`,
     isBlinking ? 'avatar--blinking' : '',
     mouthOpen ? 'avatar--mouth-open' : '',
+    size === 'hero' ? 'hero' : '',
+    size === 'collapsed' ? 'collapsed' : '',
   ].filter(Boolean).join(' ');
 
   return (
     <div className={classes}>
-      <AvatarSVG emotion={emotion} />
+      <div className="avatar-image-wrapper">
+        <img src="/nova-face.jpg" alt="Nova" className="avatar-image" />
+        <div className="avatar-image-glow" />
+      </div>
     </div>
   );
 }

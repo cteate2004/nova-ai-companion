@@ -201,7 +201,7 @@ function createTask(title, listName, dueAt) {
     [title, listName || 'todo', dueAt || null]
   );
   persist();
-  const stmt = db.prepare('SELECT * FROM tasks WHERE id = last_insert_rowid()');
+  const stmt = db.prepare('SELECT * FROM tasks ORDER BY id DESC LIMIT 1');
   stmt.step();
   const row = stmt.getAsObject();
   stmt.free();
@@ -253,7 +253,7 @@ function createReminder(message, remindAt) {
     [message, remindAt]
   );
   persist();
-  const stmt = db.prepare('SELECT * FROM reminders WHERE id = last_insert_rowid()');
+  const stmt = db.prepare('SELECT * FROM reminders ORDER BY id DESC LIMIT 1');
   stmt.step();
   const row = stmt.getAsObject();
   stmt.free();
@@ -296,7 +296,7 @@ function createExpense(amount, category, description) {
     [amount, category || 'other', description || null]
   );
   persist();
-  const stmt = db.prepare('SELECT * FROM expenses WHERE id = last_insert_rowid()');
+  const stmt = db.prepare('SELECT * FROM expenses ORDER BY id DESC LIMIT 1');
   stmt.step();
   const row = stmt.getAsObject();
   stmt.free();
@@ -339,7 +339,7 @@ function createScheduledMessage(type, time) {
     [type, time]
   );
   persist();
-  const stmt = db.prepare('SELECT * FROM scheduled_messages WHERE id = last_insert_rowid()');
+  const stmt = db.prepare('SELECT * FROM scheduled_messages ORDER BY id DESC LIMIT 1');
   stmt.step();
   const row = stmt.getAsObject();
   stmt.free();
@@ -384,7 +384,7 @@ function createMoodLog(mood, note) {
     [mood, note || null]
   );
   persist();
-  const stmt = db.prepare('SELECT * FROM mood_logs WHERE id = last_insert_rowid()');
+  const stmt = db.prepare('SELECT * FROM mood_logs ORDER BY id DESC LIMIT 1');
   stmt.step();
   const row = stmt.getAsObject();
   stmt.free();
@@ -409,7 +409,7 @@ function createSpecialDate(name, date, remindDaysBefore) {
     [name, date, remindDaysBefore != null ? remindDaysBefore : 3]
   );
   persist();
-  const stmt = db.prepare('SELECT * FROM special_dates WHERE id = last_insert_rowid()');
+  const stmt = db.prepare('SELECT * FROM special_dates ORDER BY id DESC LIMIT 1');
   stmt.step();
   const row = stmt.getAsObject();
   stmt.free();

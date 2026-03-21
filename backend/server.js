@@ -9,7 +9,7 @@ const { streamChat, extractEmotion, removeEmotionTag } = require('./claude');
 const { shouldExtract, extractMemories } = require('./memory');
 
 const app = express();
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const NOVA_PIN = process.env.NOVA_PIN || '1234';

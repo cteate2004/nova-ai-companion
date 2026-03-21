@@ -2,12 +2,20 @@ const cron = require('node-cron');
 const db = require('./database');
 const push = require('./push');
 
+const USER_TIMEZONE = process.env.USER_TIMEZONE || 'America/Los_Angeles';
+
+function getNow() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: USER_TIMEZONE }));
+}
+
 function start() {
+  console.log(`[Scheduler] Using timezone: ${USER_TIMEZONE}`);
+
   // Check for due reminders every 60 seconds
   cron.schedule('* * * * *', async () => {
     try {
       const reminders = db.getReminders(true);
-      const now = new Date();
+      const now = getNow();
 
       for (const r of reminders) {
         const remindAt = new Date(r.remind_at);
@@ -26,7 +34,7 @@ function start() {
   cron.schedule('* * * * *', async () => {
     try {
       const schedules = db.getScheduledMessages();
-      const now = new Date();
+      const now = getNow();
       const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
       for (const s of schedules) {
@@ -46,7 +54,7 @@ function start() {
         if (message) {
           await push.sendToAll('Nova 💜', message);
           db.updateScheduledMessage(s.id, { last_sent: today });
-          console.log(`[Scheduler] Sent ${s.type} message`);
+          console.log(`[Scheduler] Sent ${s.type} message at ${currentTime} ${USER_TIMEZONE}`);
         }
       }
     } catch (e) {
@@ -57,7 +65,7 @@ function start() {
   // "Thinking of you" nudges — check every 30 minutes
   cron.schedule('*/30 * * * *', async () => {
     try {
-      const hour = new Date().getHours();
+      const hour = getNow().getHours();
       if (hour < 8 || hour >= 22) return;
 
       if (Math.random() > 0.06) return;

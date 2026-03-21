@@ -21,7 +21,7 @@ Five capabilities, all chat-driven (no frontend changes):
 |---|-----------|-----------|-------------------|
 | 1 | List current month's budget items | `get_budget_items` | GET `/api/budgets.php` + GET `/api/budget-items.php` |
 | 2 | Mark item as paid | `mark_budget_item_paid` | PATCH `/api/budget-items.php` |
-| 3 | Upcoming/overdue bills (7-day window) | `get_upcoming_bills` | GET `/api/dashboard.php?action=upcoming` |
+| 3 | Upcoming bills (next 7 days) + overdue unpaid | `get_upcoming_bills` | GET `/api/dashboard.php?action=upcoming` |
 | 4 | Add new budget item | `add_budget_item` | POST `/api/budget-items.php` |
 | 5 | Budget summary (totals, remaining) | `get_budget_summary` | GET `/api/budgets.php` + GET `/api/budget-items.php` |
 
@@ -47,7 +47,8 @@ Checks for `X-API-Key` header. If it matches `NOVA_API_KEY`, sets `$_SESSION['us
 
 ```php
 <?php
-if (isset($_SERVER['HTTP_X_API_KEY']) && $_SERVER['HTTP_X_API_KEY'] === NOVA_API_KEY) {
+// Note: session_start() already called via config.php include chain
+if (isset($_SERVER['HTTP_X_API_KEY']) && hash_equals(NOVA_API_KEY, $_SERVER['HTTP_X_API_KEY'])) {
     $_SESSION['user_id'] = <cliftont_user_id>;
     $_SESSION['is_admin'] = 0;
 }
@@ -59,6 +60,20 @@ Add `require_once __DIR__ . '/../includes/api_auth.php';` after the existing con
 - `api/budgets.php`
 - `api/budget-items.php`
 - `api/dashboard.php`
+- `api/categories.php`
+- `api/accounts.php`
+
+### 4. Patch `api/dashboard.php` upcoming query
+
+Modify the upcoming bills SQL to also include overdue unpaid items and remove the LIMIT 5 when accessed via API key:
+
+```sql
+WHERE bi.user_id = :uid
+  AND bi.is_paid = 0
+  AND (bi.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+       OR bi.due_date < CURDATE())
+ORDER BY bi.due_date ASC
+```
 
 ## Nova Backend Changes
 
@@ -74,24 +89,39 @@ HTTP client module that wraps Budget Pro API calls. Uses Node's built-in `fetch`
 
 #### `getCurrentBudgetId()`
 - GET `/api/budgets.php`
-- Finds budget where `budget_month` matches current month (YYYY-MM-01)
-- Returns budget ID or null
+- Finds budget where `budget_month` starts with current YYYY-MM prefix
+- Returns budget ID, or throws with message: "No budget found for [Month Year]. Create one in Budget Pro first."
 
 #### `getBudgetItems()`
 - Calls `getCurrentBudgetId()` then GET `/api/budget-items.php?budget_id=<id>`
 - Returns array of items with: description, amount, actual_amount, due_date, is_paid, paid_date, category, account
 
 #### `markItemPaid(itemId, actualAmount)`
-- PATCH `/api/budget-items.php` with `id=<itemId>&is_paid=1&paid_date=<today>&actual_amount=<amount>`
+- PATCH `/api/budget-items.php` with URL-encoded body: `id=<itemId>&is_paid=1&paid_date=<today>&actual_amount=<amount>`
+- Content-Type must be `application/x-www-form-urlencoded` (Budget Pro uses `parse_str` on `php://input`)
 - Returns success/failure
 
 #### `getUpcoming()`
 - GET `/api/dashboard.php?action=upcoming`
-- Returns items due within 7 days
+- Returns items due within 7 days + overdue unpaid items
+- Note: Budget Pro's endpoint currently only returns upcoming (not overdue) with LIMIT 5 for non-admin users. Both will be patched: add overdue unpaid items to the query and remove the LIMIT for API key requests.
 
-#### `addBudgetItem(budgetId, description, amount, dueDate, itemType, categoryId, accountId)`
-- POST `/api/budget-items.php`
-- Creates new item in specified budget
+#### `getCategories()`
+- Internal helper (not a Claude tool)
+- GET `/api/categories.php`
+- Returns list of categories with id and name, cached for the request
+
+#### `getAccounts()`
+- Internal helper (not a Claude tool)
+- GET `/api/accounts.php`
+- Returns list of accounts with id and name, cached for the request
+
+#### `addBudgetItem({ description, amount, dueDate, itemType, category, account })`
+- Calls `getCurrentBudgetId()` to get budget_id
+- Resolves `category` string to `category_id` via `getCategories()` (fuzzy match by name, falls back to first active category)
+- Resolves `account` string to `account_id` via `getAccounts()` (fuzzy match by name, falls back to first active account)
+- If `due_date` omitted, defaults to last day of current month
+- POST `/api/budget-items.php` with all required fields: budget_id, item_type, account_id, category_id, amount, due_date, description
 - Returns created item
 
 #### `getBudgetSummary()`
@@ -140,8 +170,10 @@ HTTP client module that wraps Budget Pro API calls. Uses Node's built-in `fetch`
     properties: {
       description: { type: 'string', description: 'Item description (e.g. "Electric bill")' },
       amount: { type: 'number', description: 'Budgeted amount' },
-      due_date: { type: 'string', description: 'Due date in YYYY-MM-DD format' },
-      item_type: { type: 'string', enum: ['income', 'expense'], description: 'Whether this is income or expense' }
+      due_date: { type: 'string', description: 'Due date in YYYY-MM-DD format. Defaults to end of current month if omitted.' },
+      item_type: { type: 'string', enum: ['income', 'expense'], description: 'Whether this is income or expense' },
+      category: { type: 'string', description: 'Category name (e.g. "Utilities", "Groceries"). Resolved to ID automatically.' },
+      account: { type: 'string', description: 'Account name (e.g. "Checking", "Credit Card"). Resolved to ID automatically.' }
     },
     required: ['description', 'amount', 'item_type']
   }
@@ -199,9 +231,16 @@ BUDGET_API_KEY=<generated-key>
 > "How's my budget looking?"
 > Nova calls `get_budget_summary`, responds with totals and remaining balance
 
+## Error Handling
+
+- `budget.js` functions throw on HTTP errors (matching existing Nova tool pattern — `executeTool()` has a top-level try/catch)
+- `getCurrentBudgetId()` throws a user-friendly message when no budget exists for the current month
+- All PATCH requests use `Content-Type: application/x-www-form-urlencoded` (Budget Pro parses with `parse_str`)
+
 ## Security
 
 - API key is a long random string, transmitted over HTTPS only
+- API key comparison uses `hash_equals()` (timing-safe)
 - API key grants access only to the cliftont user account — not admin
 - No session cookies or credentials stored in Nova
 - Budget Pro's existing CSRF/session auth remains intact for browser access

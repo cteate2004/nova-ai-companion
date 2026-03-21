@@ -173,6 +173,10 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
   }
 });
 
+function stripEmojis(text) {
+  return text.replace(/\p{Extended_Pictographic}/gu, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 // POST /api/tts — proxy to edge-tts service
 app.post('/api/tts', async (req, res) => {
   const { text, voice } = req.body;
@@ -183,7 +187,7 @@ app.post('/api/tts', async (req, res) => {
     const resp = await fetch(`${ttsUrl}/tts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, voice }),
+      body: JSON.stringify({ text: stripEmojis(text), voice }),
     });
 
     if (!resp.ok) {

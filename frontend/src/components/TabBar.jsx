@@ -1,11 +1,12 @@
 import React from 'react';
 
 const TABS = [
-  { id: 'home', label: 'Nova', icon: '\u{1F469}' },
-  { id: 'chat', label: 'Chat', icon: '\u{1F4AC}' },
-  { id: 'tasks', label: 'Tasks', icon: '\u{1F4CB}' },
-  { id: 'alerts', label: 'Alerts', icon: '\u{1F514}' },
-  { id: 'settings', label: 'Settings', icon: '\u2699\uFE0F' },
+  { id: 'home', icon: '\u{1F469}' },
+  { id: 'chat', icon: '\u{1F4AC}' },
+  { id: 'tasks', icon: '\u{1F4CB}' },
+  { id: 'grocery', icon: '\u{1F6D2}' },
+  { id: 'alerts', icon: '\u{1F514}' },
+  { id: 'settings', icon: '\u2699\uFE0F' },
 ];
 
 export default function TabBar({ activeTab, onTabChange }) {
@@ -18,7 +19,6 @@ export default function TabBar({ activeTab, onTabChange }) {
           onPointerDown={() => onTabChange(tab.id)}
         >
           <span className="tab-icon">{tab.icon}</span>
-          <span className="tab-label">{tab.label}</span>
           {activeTab === tab.id && <span className="tab-indicator" />}
         </button>
       ))}

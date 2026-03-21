@@ -4,6 +4,7 @@ import HomeScreen from './components/HomeScreen';
 import ChatPanel from './components/ChatPanel';
 import TasksScreen from './components/TasksScreen';
 import AlertsScreen from './components/AlertsScreen';
+import GroceryScreen from './components/GroceryScreen';
 import SettingsScreen from './components/SettingsScreen';
 import MemoryScreen from './components/MemoryScreen';
 import ParticleBackground from './components/ParticleBackground';
@@ -141,6 +142,8 @@ function NovaApp({ authToken, onLogout }) {
         );
       case 'tasks':
         return <TasksScreen authToken={authToken} />;
+      case 'grocery':
+        return <GroceryScreen authToken={authToken} isActive={activeTab === 'grocery'} />;
       case 'alerts':
         return <AlertsScreen authToken={authToken} />;
       case 'settings':

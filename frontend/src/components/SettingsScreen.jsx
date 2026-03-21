@@ -38,7 +38,8 @@ export default function SettingsScreen({ authToken }) {
       const res = await fetch('/api/google/status', { headers });
       if (res.ok) {
         const data = await res.json();
-        setGoogleStatus(data);
+        // API returns { authorized: true }, normalize to { connected: true }
+        setGoogleStatus({ connected: data.authorized || data.connected || false, email: data.email });
       }
     } catch (err) {
       console.error('[SettingsScreen] google status error:', err);

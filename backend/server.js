@@ -359,6 +359,8 @@ app.get('{*path}', (req, res) => {
 async function start() {
   await db.init();
   require('./push').initVapid();
+  const scheduler = require('./scheduler');
+  scheduler.start();
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Nova] Backend running on http://0.0.0.0:${PORT}`);
   });

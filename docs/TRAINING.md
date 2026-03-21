@@ -246,7 +246,40 @@ All data is stored locally in `backend/data/nova.db` (SQLite). Nothing is sent t
 - Google APIs (if connected, for email/calendar)
 - Push services (Apple/Google, for notifications)
 
-## 11. Troubleshooting
+## 11. Budget Management
+
+Nova connects to your Budget Pro app (ctdevbudget.com) so you can manage your monthly budget through conversation.
+
+### What You Can Ask
+
+**Check your budget:**
+> "What's on my budget this month?"
+> Nova lists all your budget items with amounts, due dates, and paid status.
+
+**See what's coming up:**
+> "What bills are coming up?"
+> Nova shows unpaid bills due in the next 7 days and any overdue bills.
+
+**Get a summary:**
+> "How's my budget looking?"
+> Nova shows your totals — budgeted vs actual income and expenses, how many items are paid, and what's remaining.
+
+**Mark something as paid:**
+> "I just paid rent, it was $2,000"
+> "Mark the electric bill as paid"
+> Nova finds the item and marks it paid. If you tell her the actual amount, she records that too.
+
+**Add a new item:**
+> "Add a $50 expense for haircut on the 28th"
+> "Add a $200 income for freelance work"
+> Nova adds the item to your current month's budget with the right category and account.
+
+### Notes
+- Budget items are managed in Budget Pro — Nova reads and updates them via the API.
+- You still create monthly budgets in Budget Pro's web interface. Nova works with the current month's existing budget.
+- Categories and accounts are matched automatically when you add items. If you say "utilities" or "checking," Nova finds the closest match.
+
+## 12. Troubleshooting
 
 | Problem | Solution |
 |---------|----------|

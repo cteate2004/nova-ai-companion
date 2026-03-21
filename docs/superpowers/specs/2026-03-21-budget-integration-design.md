@@ -1,7 +1,7 @@
 # Nova — Budget Pro Integration
 
 **Date:** 2026-03-21
-**Status:** Draft
+**Status:** Implemented
 
 ## Problem
 

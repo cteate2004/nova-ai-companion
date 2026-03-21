@@ -41,13 +41,16 @@ function start() {
       const schedules = db.getScheduledMessages();
       const now = getNow();
       const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      console.log(`[Scheduler] Scheduled msgs check — now=${currentTime}, ${schedules.length} schedule(s): ${schedules.map(s => `${s.type}@${s.time}(enabled=${s.enabled},last_sent=${s.last_sent})`).join(', ')}`);
 
       for (const s of schedules) {
         if (!s.enabled) continue;
-        if (s.time !== currentTime) continue;
 
         const today = now.toISOString().split('T')[0];
         if (s.last_sent === today) continue;
+
+        // Fire if current time matches OR if we've passed the scheduled time (catch missed windows)
+        if (currentTime < s.time) continue;
 
         let message;
         if (s.type === 'good_morning') {

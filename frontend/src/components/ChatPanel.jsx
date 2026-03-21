@@ -34,6 +34,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, emotion, onMi
   const [imageFile, setImageFile] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -59,6 +60,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, emotion, onMi
     setImageFile(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
   }
 
   return (
@@ -115,14 +117,30 @@ export default function ChatPanel({ messages, isStreaming, onSend, emotion, onMi
           onChange={handleImageSelect}
           style={{ display: 'none' }}
         />
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageSelect}
+          style={{ display: 'none' }}
+        />
         <button
           type="button"
           className="chat-image-btn"
           onClick={() => fileInputRef.current?.click()}
           disabled={isStreaming}
-          title="Send a photo"
+          title="Take a photo"
         >
           {'\u{1F4F7}'}
+        </button>
+        <button
+          type="button"
+          className="chat-image-btn"
+          onClick={() => galleryInputRef.current?.click()}
+          disabled={isStreaming}
+          title="Choose from gallery"
+        >
+          {'\u{1F5BC}'}
         </button>
         <input
           className="chat-input"

@@ -38,10 +38,12 @@ async function sendToAll(title, body, url = '/') {
     } catch (err) {
       console.error(`[Push] FAILED (${err.statusCode || err.code}) → ${sub.endpoint.substring(0, 60)}: ${err.body || err.message}`);
       process.stderr.write(`[Push] Full error: ${JSON.stringify({statusCode: err.statusCode, body: err.body, headers: err.headers})}\n`);
-      // Only delete if endpoint is permanently gone (410 Gone)
-      if (err.statusCode === 410) {
+      // Remove permanently broken subscriptions
+      const gone = err.statusCode === 410;
+      const vapidMismatch = err.statusCode === 400 && err.body && err.body.includes('VapidPkHashMismatch');
+      if (gone || vapidMismatch) {
         db.deletePushSubscription(sub.endpoint);
-        console.log(`[Push] Removed expired subscription`);
+        console.log(`[Push] Removed stale subscription (${gone ? '410 Gone' : 'VapidPkHashMismatch'})`);
       }
       results.push({ success: false, error: err.message, statusCode: err.statusCode, body: err.body });
     }

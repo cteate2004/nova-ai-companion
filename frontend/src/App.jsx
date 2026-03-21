@@ -1,28 +1,53 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import Avatar from './components/Avatar';
+import TabBar from './components/TabBar';
+import HomeScreen from './components/HomeScreen';
 import ChatPanel from './components/ChatPanel';
-import VoiceControl from './components/VoiceControl';
-import StatusBar from './components/StatusBar';
+import TasksScreen from './components/TasksScreen';
+import AlertsScreen from './components/AlertsScreen';
+import SettingsScreen from './components/SettingsScreen';
 import ParticleBackground from './components/ParticleBackground';
+import LoginScreen from './components/LoginScreen';
 import useChat from './hooks/useChat';
 import useAvatar from './hooks/useAvatar';
 import useVoice from './hooks/useVoice';
 
 export default function App() {
-  const [chatOpen, setChatOpen] = useState(false);
-  const { messages, sendMessage, isStreaming, currentEmotion, connected } = useChat();
+  const [authToken, setAuthToken] = useState(localStorage.getItem('nova_token'));
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Verify stored token on mount
+  useEffect(() => {
+    const token = localStorage.getItem('nova_token');
+    if (!token) { setAuthChecked(true); return; }
+
+    fetch('/api/auth/check', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.authenticated) {
+          localStorage.removeItem('nova_token');
+          setAuthToken(null);
+        }
+        setAuthChecked(true);
+      })
+      .catch(() => setAuthChecked(true));
+  }, []);
+
+  if (!authChecked) return null;
+  if (!authToken) {
+    return <LoginScreen onLogin={(token) => setAuthToken(token)} />;
+  }
+
+  return <NovaApp authToken={authToken} onLogout={() => { localStorage.removeItem('nova_token'); setAuthToken(null); }} />;
+}
+
+function NovaApp({ authToken, onLogout }) {
+  const [activeTab, setActiveTab] = useState('home');
+  const { messages, sendMessage, isStreaming, currentEmotion, connected } = useChat(authToken);
   const { displayEmotion, isBlinking, mouthOpen, startTalking, stopTalking, setDisplayEmotion } = useAvatar(currentEmotion);
   const lastAssistantMsg = useRef('');
-
-  // Track the latest assistant message for TTS
-  useEffect(() => {
-    if (messages.length > 0) {
-      const last = messages[messages.length - 1];
-      if (last.role === 'assistant' && last.content) {
-        lastAssistantMsg.current = last.content;
-      }
-    }
-  }, [messages]);
+  const speakRef = useRef(null);
 
   const handleTranscript = useCallback((text) => {
     sendMessage(text);
@@ -40,7 +65,21 @@ export default function App() {
     onTranscript: handleTranscript,
     onTTSStart: handleTTSStart,
     onTTSEnd: handleTTSEnd,
+    authToken,
   });
+
+  // Keep a stable ref to speak so the effect doesn't re-trigger
+  speakRef.current = voice.speak;
+
+  // Track the latest assistant message for TTS
+  useEffect(() => {
+    if (messages.length > 0) {
+      const last = messages[messages.length - 1];
+      if (last.role === 'assistant' && last.content) {
+        lastAssistantMsg.current = last.content;
+      }
+    }
+  }, [messages]);
 
   // Set avatar to listening when mic is active
   useEffect(() => {
@@ -50,13 +89,14 @@ export default function App() {
   }, [voice.isListening, setDisplayEmotion]);
 
   // Auto-speak Nova's response when streaming ends
-  const prevStreaming = useRef(isStreaming);
+  const wasStreaming = useRef(false);
   useEffect(() => {
-    if (prevStreaming.current && !isStreaming && lastAssistantMsg.current) {
-      voice.speak(lastAssistantMsg.current);
+    if (wasStreaming.current && !isStreaming && lastAssistantMsg.current) {
+      console.log('[App] Streaming ended, speaking response...');
+      speakRef.current?.(lastAssistantMsg.current);
     }
-    prevStreaming.current = isStreaming;
-  }, [isStreaming, voice.speak]);
+    wasStreaming.current = isStreaming;
+  }, [isStreaming]);
 
   const handleMicToggle = useCallback(() => {
     if (voice.isListening) {
@@ -67,39 +107,48 @@ export default function App() {
     }
   }, [voice]);
 
+  function renderScreen() {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <HomeScreen
+            emotion={displayEmotion}
+            isBlinking={isBlinking}
+            mouthOpen={mouthOpen}
+            messages={messages}
+            onTabChange={setActiveTab}
+            onMicToggle={handleMicToggle}
+            connected={connected}
+            authToken={authToken}
+          />
+        );
+      case 'chat':
+        return (
+          <ChatPanel
+            messages={messages}
+            isStreaming={isStreaming}
+            onSend={sendMessage}
+            emotion={displayEmotion}
+            onMicToggle={handleMicToggle}
+            connected={connected}
+          />
+        );
+      case 'tasks':
+        return <TasksScreen authToken={authToken} />;
+      case 'alerts':
+        return <AlertsScreen authToken={authToken} />;
+      case 'settings':
+        return <SettingsScreen authToken={authToken} />;
+      default:
+        return null;
+    }
+  }
+
   return (
     <div className="app">
       <ParticleBackground />
-
-      <div className="app-main">
-        <Avatar
-          emotion={displayEmotion}
-          isBlinking={isBlinking}
-          mouthOpen={mouthOpen}
-        />
-
-        <VoiceControl
-          isListening={voice.isListening}
-          supported={voice.supported}
-          onToggle={handleMicToggle}
-        />
-      </div>
-
-      {!chatOpen && (
-        <button className="chat-toggle" onClick={() => setChatOpen(true)}>
-          💬 Chat
-        </button>
-      )}
-
-      <ChatPanel
-        messages={messages}
-        isStreaming={isStreaming}
-        onSend={sendMessage}
-        isOpen={chatOpen}
-        onClose={() => setChatOpen(false)}
-      />
-
-      <StatusBar connected={connected} emotion={displayEmotion} />
+      {renderScreen()}
+      <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 }

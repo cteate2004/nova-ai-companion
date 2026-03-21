@@ -1,48 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-const SpeechRecognition = typeof window !== 'undefined'
-  ? (window.SpeechRecognition || window.webkitSpeechRecognition)
-  : null;
-
 // Strip emotion JSON tag that Claude appends
 function stripEmotionTag(text) {
   return text.replace(/\s*\{"emotion":\s*"\w+"\}\s*$/, '').trim();
 }
 
-// Load voices asynchronously — Chrome fires voiceschanged after first call
-function getVoices() {
-  return new Promise(resolve => {
-    const voices = speechSynthesis.getVoices();
-    if (voices.length > 0) return resolve(voices);
-    speechSynthesis.addEventListener('voiceschanged', () => {
-      resolve(speechSynthesis.getVoices());
-    }, { once: true });
-  });
-}
-
-// Pick the best available female English voice
-async function pickVoice() {
-  const voices = await getVoices();
-  const preferred = ['Zira', 'Hazel', 'Susan', 'Jenny', 'Aria'];
-
-  for (const name of preferred) {
-    const match = voices.find(v => v.name.includes(name) && v.lang.startsWith('en'));
-    if (match) return match;
-  }
-
-  // Fallback: any English voice, prefer one with "female" in the name
-  const english = voices.filter(v => v.lang.startsWith('en'));
-  const female = english.find(v => /female/i.test(v.name));
-  if (female) return female;
-
-  // Second fallback: second English voice (often female on Windows)
-  return english[1] || english[0] || voices[0] || null;
-}
-
 // Simple chime using Web Audio API
 function playChime(freq = 880, duration = 0.12) {
   try {
-    const ctx = new AudioContext();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
@@ -56,133 +22,261 @@ function playChime(freq = 880, duration = 0.12) {
   } catch {}
 }
 
-export default function useVoice({ onTranscript, onTTSStart, onTTSEnd }) {
+// Pick a MIME type the browser supports for MediaRecorder
+function getSupportedMimeType() {
+  const types = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+    'audio/ogg',
+    '',
+  ];
+  for (const type of types) {
+    if (!type || (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(type))) {
+      return type;
+    }
+  }
+  return '';
+}
+
+// Create a persistent Audio element and unlock it on iOS
+// iOS Safari only allows audio playback from elements that have been
+// "activated" by playing (even silence) during a user gesture.
+const sharedAudio = (typeof document !== 'undefined') ? new Audio() : null;
+let audioUnlocked = false;
+
+function unlockAudio() {
+  if (audioUnlocked || !sharedAudio) return;
+  // Play a tiny silent data URI to unlock the audio element
+  sharedAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRwMHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+  sharedAudio.volume = 0.01;
+  const p = sharedAudio.play();
+  if (p) p.catch(() => {});
+  audioUnlocked = true;
+}
+
+export default function useVoice({ onTranscript, onTTSStart, onTTSEnd, authToken }) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [supported, setSupported] = useState(false);
-  const recognitionRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const streamRef = useRef(null);
   const spaceHeld = useRef(false);
-  const selectedVoice = useRef(null);
-  const hasInteracted = useRef(false);
+  const lastToggleTime = useRef(0);
+  const DEBOUNCE_MS = 300;
+  const currentAudioUrl = useRef(null);
+  const onTTSStartRef = useRef(onTTSStart);
+  const onTTSEndRef = useRef(onTTSEnd);
+  onTTSStartRef.current = onTTSStart;
+  onTTSEndRef.current = onTTSEnd;
 
-  // Track user interaction for autoplay policy
+  // Unlock audio on ANY user gesture (critical for iOS)
   useEffect(() => {
-    function markInteracted() {
-      hasInteracted.current = true;
+    function handleGesture() {
+      unlockAudio();
     }
-    window.addEventListener('click', markInteracted, { once: true });
-    window.addEventListener('keydown', markInteracted, { once: true });
+    window.addEventListener('touchstart', handleGesture);
+    window.addEventListener('touchend', handleGesture);
+    window.addEventListener('click', handleGesture);
+    window.addEventListener('keydown', handleGesture);
     return () => {
-      window.removeEventListener('click', markInteracted);
-      window.removeEventListener('keydown', markInteracted);
+      window.removeEventListener('touchstart', handleGesture);
+      window.removeEventListener('touchend', handleGesture);
+      window.removeEventListener('click', handleGesture);
+      window.removeEventListener('keydown', handleGesture);
     };
   }, []);
 
-  // Load voices on mount
+  // Check support on mount
   useEffect(() => {
-    setSupported(!!SpeechRecognition);
-    pickVoice().then(voice => {
-      selectedVoice.current = voice;
-      console.log('[Voice] Selected TTS voice:', voice?.name || 'none');
-    });
+    const hasMediaRecorder = typeof MediaRecorder !== 'undefined';
+    const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    setSupported(hasMediaRecorder && hasGetUserMedia);
   }, []);
 
-  const startListening = useCallback(() => {
-    if (!SpeechRecognition || isListening) return;
+  const startListening = useCallback(async () => {
+    if (isListening) return;
+    const now = Date.now();
+    if (now - lastToggleTime.current < DEBOUNCE_MS) return;
+    lastToggleTime.current = now;
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      chunksRef.current = [];
 
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      if (transcript.trim()) {
-        onTranscript?.(transcript.trim());
-      }
-    };
+      const mimeType = getSupportedMimeType();
+      const options = mimeType ? { mimeType } : {};
+      const recorder = new MediaRecorder(stream, options);
 
-    recognition.onerror = () => {
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+
+        const blob = new Blob(chunksRef.current, { type: mimeType || 'audio/webm' });
+        chunksRef.current = [];
+
+        if (blob.size < 1000) {
+          setIsListening(false);
+          return;
+        }
+
+        try {
+          const formData = new FormData();
+          const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+          formData.append('audio', blob, `recording.${ext}`);
+
+          const resp = await fetch('/api/transcribe', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}` },
+            body: formData,
+          });
+
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.text && data.text.trim()) {
+              onTranscript?.(data.text.trim());
+            }
+          } else {
+            console.error('[Voice] Transcription failed:', resp.status);
+          }
+        } catch (err) {
+          console.error('[Voice] Transcription error:', err);
+        }
+
+        setIsListening(false);
+        playChime(660, 0.1);
+      };
+
+      recorder.onerror = () => {
+        stream.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+        setIsListening(false);
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsListening(true);
+      playChime(880, 0.12);
+    } catch (err) {
+      console.error('[Voice] Mic access denied:', err);
       setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-      playChime(660, 0.1);
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
-    playChime(880, 0.12);
-  }, [isListening, onTranscript]);
+    }
+  }, [isListening, onTranscript, authToken]);
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+    const now = Date.now();
+    if (now - lastToggleTime.current < DEBOUNCE_MS) return;
+    lastToggleTime.current = now;
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      // setIsListening(false) is called inside recorder.onstop to avoid race conditions
+      mediaRecorderRef.current = null;
+    } else {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+      setIsListening(false);
     }
-    setIsListening(false);
   }, []);
 
-  // Speak text — chunks into sentences to avoid Chrome's 15-second kill bug
-  const speak = useCallback((text) => {
-    if (!text) return;
+  // Speak text using server-side edge-tts via the shared (unlocked) Audio element
+  const speak = useCallback(async (text) => {
+    if (!text || !sharedAudio) return;
 
-    // Don't speak if user hasn't interacted yet (autoplay policy)
-    if (!hasInteracted.current) {
-      console.log('[Voice] Skipping TTS — no user interaction yet');
-      return;
-    }
-
-    // Strip emotion tag before speaking
     const cleanText = stripEmotionTag(text);
     if (!cleanText) return;
 
-    speechSynthesis.cancel();
+    // Revoke previous blob URL if any
+    if (currentAudioUrl.current) {
+      URL.revokeObjectURL(currentAudioUrl.current);
+      currentAudioUrl.current = null;
+    }
 
-    // Split into sentences to avoid Chrome's ~15s utterance timeout
-    const sentences = cleanText.match(/[^.!?]+[.!?]+/g) || [cleanText];
-    let started = false;
+    console.log('[Voice] Requesting TTS for:', cleanText.slice(0, 50) + '...');
 
-    sentences.forEach((sentence, i) => {
-      const utterance = new SpeechSynthesisUtterance(sentence.trim());
-      if (selectedVoice.current) utterance.voice = selectedVoice.current;
-      utterance.rate = 0.95;
-      utterance.pitch = 1.05;
+    try {
+      setIsSpeaking(true);
+      onTTSStartRef.current?.();
 
-      // Fire onTTSStart only on the first sentence
-      if (i === 0) {
-        utterance.onstart = () => {
-          started = true;
-          setIsSpeaking(true);
-          onTTSStart?.();
-        };
+      const resp = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ text: cleanText }),
+      });
+
+      if (!resp.ok) {
+        console.error('[Voice] TTS request failed:', resp.status);
+        setIsSpeaking(false);
+        onTTSEndRef.current?.();
+        return;
       }
 
-      // Fire onTTSEnd only on the last sentence
-      if (i === sentences.length - 1) {
-        utterance.onend = () => {
-          setIsSpeaking(false);
-          onTTSEnd?.();
-        };
-        utterance.onerror = () => {
-          setIsSpeaking(false);
-          onTTSEnd?.();
-        };
-      }
+      const audioBlob = await resp.blob();
+      console.log('[Voice] Got TTS audio blob:', audioBlob.size, 'bytes');
+      const audioUrl = URL.createObjectURL(audioBlob);
+      currentAudioUrl.current = audioUrl;
 
-      speechSynthesis.speak(utterance);
-    });
-  }, [onTTSStart, onTTSEnd]);
+      // Use the pre-unlocked shared audio element
+      sharedAudio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        currentAudioUrl.current = null;
+        setIsSpeaking(false);
+        onTTSEndRef.current?.();
+      };
+
+      sharedAudio.onerror = (e) => {
+        console.error('[Voice] Audio playback error:', e);
+        URL.revokeObjectURL(audioUrl);
+        currentAudioUrl.current = null;
+        setIsSpeaking(false);
+        onTTSEndRef.current?.();
+      };
+
+      sharedAudio.src = audioUrl;
+      sharedAudio.volume = 1.0;
+
+      const playPromise = sharedAudio.play();
+      if (playPromise) {
+        playPromise.then(() => {
+          console.log('[Voice] Audio playing');
+        }).catch((err) => {
+          console.error('[Voice] Audio play blocked:', err);
+          setIsSpeaking(false);
+          onTTSEndRef.current?.();
+        });
+      }
+    } catch (err) {
+      console.error('[Voice] TTS error:', err);
+      setIsSpeaking(false);
+      onTTSEndRef.current?.();
+    }
+  }, [authToken]);
 
   const stopSpeaking = useCallback(() => {
-    speechSynthesis.cancel();
+    if (sharedAudio) {
+      sharedAudio.pause();
+      sharedAudio.currentTime = 0;
+    }
+    if (currentAudioUrl.current) {
+      URL.revokeObjectURL(currentAudioUrl.current);
+      currentAudioUrl.current = null;
+    }
     setIsSpeaking(false);
-    onTTSEnd?.();
-  }, [onTTSEnd]);
+    onTTSEndRef.current?.();
+  }, []);
 
-  // Spacebar push-to-talk handler
+  // Spacebar push-to-talk handler (desktop)
   useEffect(() => {
     function onKeyDown(e) {
       if (e.code === 'Space' && !e.repeat && !e.target.matches('input, textarea')) {

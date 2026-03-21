@@ -2,8 +2,8 @@ import React, { useRef, useEffect } from 'react';
 
 const PARTICLE_COUNT = 50;
 const COLORS = [
-  { r: 0, g: 212, b: 170 },   // teal #00d4aa
-  { r: 212, g: 165, b: 116 },  // warm gold #d4a574
+  { r: 200, g: 160, b: 255 },  // lavender rgba(200,160,255)
+  { r: 100, g: 180, b: 255 },  // blue rgba(100,180,255)
 ];
 
 function createParticle(width, height) {

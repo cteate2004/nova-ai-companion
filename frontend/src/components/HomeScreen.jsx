@@ -1,7 +1,9 @@
 import React from 'react';
 import Avatar from './Avatar';
+import WeatherCard from './WeatherCard';
+import EventCard from './EventCard';
 
-export default function HomeScreen({ emotion, isBlinking, mouthOpen, messages, onTabChange, onMicToggle, connected }) {
+export default function HomeScreen({ emotion, isBlinking, mouthOpen, messages, onTabChange, onMicToggle, connected, authToken }) {
   const lastNovaMsg = [...messages].reverse().find(m => m.role === 'assistant' && m.content);
 
   return (
@@ -45,6 +47,8 @@ export default function HomeScreen({ emotion, isBlinking, mouthOpen, messages, o
           </span>
         </div>
       )}
+      <WeatherCard authToken={authToken} />
+      <EventCard authToken={authToken} />
     </div>
   );
 }

@@ -119,6 +119,7 @@ function NovaApp({ authToken, onLogout }) {
             onTabChange={setActiveTab}
             onMicToggle={handleMicToggle}
             connected={connected}
+            authToken={authToken}
           />
         );
       case 'chat':

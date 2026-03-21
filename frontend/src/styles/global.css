@@ -497,8 +497,8 @@ body {
 
 /* ===== MIC BUTTON ===== */
 .mic-button {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   background: rgba(200, 160, 255, 0.1);
   border: 2px solid var(--accent);
@@ -510,9 +510,13 @@ body {
   font-size: 24px;
   transition: all 300ms ease-in-out;
   margin-top: 24px;
+  touch-action: manipulation;
 }
 .mic-button:hover {
   background: rgba(200, 160, 255, 0.2);
+}
+.mic-button:active {
+  transform: none; /* Don't shift the tap target */
 }
 .mic-button.active {
   background: var(--accent);

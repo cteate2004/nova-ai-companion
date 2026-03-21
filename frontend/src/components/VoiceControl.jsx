@@ -4,7 +4,7 @@ export default function VoiceControl({ isListening, supported, onToggle }) {
   return (
     <button
       className={`mic-button ${isListening ? 'active' : ''}`}
-      onClick={onToggle}
+      onPointerDown={onToggle}
       title={
         !supported
           ? 'Voice not supported in this browser (use Chrome or Edge)'

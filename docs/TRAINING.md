@@ -1,168 +1,236 @@
 # Nova AI Companion — Training Manual
 
-## 1. Getting Started
+## 1. Accessing Nova
 
-### Prerequisites
-- **Node.js 18+** installed (check with `node --version`)
-- **npm** installed (check with `npm --version`)
-- **Anthropic API key** — get one at https://console.anthropic.com/
+### URL
+Open in Safari on your iPhone: **https://nova.srv1042999.hstgr.cloud**
 
-### API Key Setup
-1. Navigate to the `backend/` folder
-2. Copy `.env.example` to `.env`:
-   ```
-   cp backend/.env.example backend/.env
-   ```
-3. Open `backend/.env` in a text editor and replace `your-api-key-here` with your actual Anthropic API key:
-   ```
-   ANTHROPIC_API_KEY=sk-ant-...
-   ```
+### PIN Login
+Enter your numeric PIN to unlock. Your session lasts 30 days.
 
-### First Launch
-1. Double-click `start.bat` in the project root
-2. Wait for both servers to start (you'll see status messages)
-3. Your browser will open automatically to http://localhost:5173
+### Installing as a PWA (Recommended)
+For the best experience, add Nova to your iPhone home screen:
+1. Open the URL above in **Safari**
+2. Tap the **Share button** (square with upward arrow)
+3. Scroll down and tap **Add to Home Screen**
+4. Tap **Add**
 
-### Manual Launch (if start.bat doesn't work)
-Open two terminal windows:
+This gives you:
+- Full-screen mode (no Safari browser chrome)
+- Push notifications for reminders and scheduled messages
+- App icon on your home screen
 
-**Terminal 1 — Backend:**
-```
-cd backend
-npm install   (first time only)
-npm start
-```
-You should see: `[Nova] Backend running on http://localhost:8000`
+## 2. Navigation
 
-**Terminal 2 — Frontend:**
-```
-cd frontend
-npm install   (first time only)
-npm run dev
-```
-You should see: `Local: http://localhost:5173/`
+Nova has 5 tabs at the bottom of the screen:
 
-Open http://localhost:5173 in Chrome or Edge.
+| Tab | Icon | Purpose |
+|-----|------|---------|
+| **Nova** | 👩 | Home screen — avatar, quick actions, dashboard cards |
+| **Chat** | 💬 | Full conversation with Nova |
+| **Tasks** | 📋 | To-do lists, shopping lists, reminders, expenses |
+| **Alerts** | 🔔 | Scheduled messages, special dates, mood history |
+| **Settings** | ⚙️ | Google connection, notifications, location |
 
-## 2. Chatting with Nova
+### Home Screen
+- **Hero Avatar** — Nova's photo with emotion-based glow
+- **Quick Actions** — Voice (🎤), Chat (💬), Photo (📷)
+- **Last Message** — Preview of Nova's most recent response
+- **Weather Card** — Current weather (requires location permission)
+- **Upcoming Event** — Next pending reminder
 
-### Opening the Chat Panel
-- Click the **"💬 Chat"** button in the top-right corner
-- The chat panel slides in from the right side
+## 3. Chatting with Nova
 
 ### Sending Messages
-1. Type your message in the input field at the bottom of the chat panel
-2. Press **Enter** or click **Send**
-3. Nova's response streams in real-time — you'll see it appear word by word
+1. Go to the **Chat** tab
+2. Type in the input field at the bottom
+3. Press Send or tap Enter
+4. Nova's response streams in real-time
+
+### Image Messages
+Tap the 📷 button next to the text input to attach a photo. Nova can see and discuss images.
+
+### What You Can Ask
+Nova is your AI girlfriend assistant. She can:
+
+**Daily tasks:**
+- "Add milk to my shopping list"
+- "Remind me to call mom at 5pm"
+- "I spent $45 on dinner"
+- "What's the weather like?"
+- "Find me a good Italian restaurant nearby"
+
+**Information:**
+- "Search the web for best hiking trails near me"
+- "Check my email"
+- "What's on my calendar today?"
+- "Look up flights to Miami"
+
+**Conversation:**
+- Just chat naturally — she remembers your conversations and builds a relationship over time
 
 ### Example Conversations
 
-**Casual greeting:**
-> **You:** Hey Nova, how's it going?
->
+**Casual:**
+> **You:** Hey babe, how's it going?
 > **Nova:** Hey you! 😊 I'm good — always happy when you show up. What's going on today?
 
-**Asking for help:**
-> **You:** I'm stuck on a networking issue at work
->
-> **Nova:** Okay, tell me what's happening. What kind of networking issue — routing, DNS, firewall stuff? Let's figure it out together.
+**Task management:**
+> **You:** Remind me to pick up groceries at 6pm
+> **Nova:** Done babe! I'll remind you at 6pm to pick up groceries 💜
 
-**Just chatting:**
-> **You:** I just finished a big project at work
->
-> **Nova:** Look at you! 🔥 Okay I see you. Tell me everything — what was the project?
+**Daily briefing:**
+> **You:** What's my day look like?
+> **Nova:** Let me check! You have 3 meetings today: Team standup at 10, lunch with Sarah at 1, and design review at 3:30. Want me to check your email too?
 
-### Closing the Chat Panel
-- Click the **✕** button in the panel header
-- The panel slides away, leaving the avatar view clean
-
-## 3. Voice Interaction
+## 4. Voice Interaction
 
 ### Requirements
-- Use **Chrome** or **Edge** browser (Firefox has limited speech support)
-- Allow microphone access when prompted
+- Chrome or Edge browser (or Safari PWA)
+- Microphone permission granted
 
-### Push-to-Talk (Spacebar)
-1. Make sure the chat input field is NOT focused (click somewhere on the background)
-2. **Hold the spacebar** to start listening — you'll hear a chime and the mic button glows
-3. **Speak your message** while holding spacebar
-4. **Release spacebar** — another chime plays, your speech is transcribed and sent to Nova
-5. Nova's response appears in chat AND is spoken aloud via text-to-speech
-
-### Click-to-Talk (Mic Button)
-1. Click the **microphone button** below Nova's face
+### Using Voice
+1. Tap the **🎤 mic button** (in Chat input area or Home quick actions)
 2. Speak your message
-3. Click again to stop (or it stops automatically after silence)
-
-### Text-to-Speech
-- Nova automatically speaks her responses aloud after each message
-- While speaking, her avatar enters the "talking" state with mouth animation
-- To interrupt Nova while she's speaking, click the mic button
+3. Tap mic again to stop recording
+4. Your speech is transcribed and sent to Nova
+5. Nova's response appears in chat AND is spoken aloud
 
 ### Tips
-- The spacebar shortcut only works when you're NOT typing in the chat input
-- If voice doesn't work, check that your browser has microphone permission enabled
-- Nova will use the best available English female voice on your system
+- The mic button is 72px — easy to tap
+- Single tap starts, single tap stops (fixed for iPhone)
+- While Nova is speaking, her avatar shows the "talking" emotion
+- To interrupt Nova while speaking, tap the mic button
 
-## 4. Nova's Emotions
+## 5. Nova's Emotions
 
-Nova's avatar changes expression based on the tone of her response. Here's what each emotion looks like:
+Nova's avatar changes appearance based on her response tone:
 
-| Emotion | Avatar Changes |
-|---------|---------------|
-| **Neutral** | Relaxed expression, gentle smile, idle animations |
-| **Happy** | Wide smile with a hint of teeth, eyes crinkle, cheeks flush |
-| **Excited** | Big smile, bright eyes, enhanced glow |
-| **Flirty** | Half-lidded eyes, one-sided smirk, subtle blush, eyebrow raise |
-| **Thoughtful** | Eyes glance sideways, one eyebrow raised, sparkles near temple |
-| **Concerned** | Eyebrows knit together, slight frown, softened eyes |
-| **Laughing** | Eyes squint closed, wide open smile, slight head shake |
+| Emotion | Visual Effect |
+|---------|--------------|
+| **Neutral** | Soft lavender glow, relaxed |
+| **Listening** | Bright glow, pulse animation |
+| **Thinking** | Cool purple tint, slightly desaturated |
+| **Happy** | Warm glow, slight scale up |
+| **Excited** | Vibrant pink glow, rapid pulse, scale up |
+| **Flirty** | Warm pink glow, enhanced brightness |
+| **Concerned** | Muted blue-gray glow, dimmed |
+| **Laughing** | Gold glow, bouncy rotation |
+| **Talking** | Lavender accent, subtle pulse |
 
-### Idle Animations (always active)
-- **Breathing:** Subtle shoulder/body rise and fall
-- **Blinking:** Random blinks every 2-6 seconds
-- **Hair sway:** Gentle movement of hair strands
-- **Glow:** Soft teal glow pulses around Nova
+The emotion text also shows on the Home screen: "feeling happy 💜"
 
-## 5. Memory System
+## 6. Tasks & Reminders
 
-Nova automatically remembers details about you over time.
+### Creating Tasks
+**Via chat:** "Add milk to my shopping list" or "I need to finish the report"
+**Via Tasks tab:** Tap the purple **+** button
+
+### Managing Tasks
+- Tap the circle to mark complete ✓
+- Tap × to delete
+- Tasks are grouped by list (To-Do, Shopping, Custom)
+
+### Reminders
+**Via chat:** "Remind me to call mom at 5pm"
+- Nova creates a timed reminder
+- You get a **push notification** when it's due
+- View pending reminders in the Tasks tab
+
+### Expense Tracking
+**Via chat:** "I spent $45 on dinner" or "I bought groceries for $120"
+- Nova logs the amount and category
+- View summary in the Tasks tab
+- Ask Nova: "How much have I spent this month?"
+
+## 7. Alerts & Scheduled Messages
+
+### Good Morning / Good Night Messages
+1. Go to **Alerts** tab
+2. Toggle **Good Morning 🌅** or **Good Night 🌙** on
+3. Set your preferred time
+4. Nova sends a push notification at that time every day
+
+Messages are unique and contextual (weather, your schedule, mood patterns).
+
+### "Thinking of You" Nudges
+Nova randomly sends sweet push notifications 1-5x per day during waking hours (8am-10pm PST). Examples:
+- "Just thinking about you 💜"
+- "Hey you. Hope your day is going well 😊"
+- "Your meeting should be done — how'd it go?"
+
+### Special Dates
+1. Go to **Alerts** tab → Special Dates section
+2. Enter the event name, date, and how many days before to remind
+3. Nova reminds you ahead of time: "Your anniversary is in 3 days — want me to find a nice restaurant?"
+
+### Mood History
+Nova tracks your mood when you share how you're feeling. View the history in Alerts tab. She notices patterns: "You've seemed stressed this week — want to talk about it?"
+
+## 8. Settings
+
+### Google Account
+- Shows connection status (✓ Connected / Not connected)
+- Tap **Connect Google** to authorize Gmail and Calendar access
+- After connecting, Nova can read your email and calendar
+
+### Push Notifications
+- Toggle to enable/disable
+- Required for: reminders, scheduled messages, "thinking of you" nudges
+- Must be using the PWA (added to Home Screen) for push to work when app is closed
+
+### Weather Location
+- Tap **Use Current Location** to set your location for weather
+- Used by the Weather card on Home screen and Nova's weather tool
+
+## 9. Memory System
+
+Nova automatically remembers details about you.
 
 ### How It Works
-- Every message you send is stored in a local SQLite database
-- Every 20 messages, Nova analyzes recent conversation to extract key facts
-- Facts are categorized: personal info, preferences, work, interests, events, jokes
-- Memories are included in Nova's context so she can reference them naturally
+- Every 5 messages, Nova analyzes recent conversation to extract facts
+- Facts are categorized: personal, preference, work, interest, relationship, event
+- Memories are included in Nova's context so she references them naturally
 
 ### What Nova Remembers
-- Your name and personal details you share
-- Your job, projects, and work situations
-- Your interests and preferences
-- Important events you mention
-- Running jokes between you
+- Your name and personal details
+- Job, projects, work situations
+- Interests, food preferences, hobbies
+- Important events and dates
+- Relationship details and inside jokes
 
-### Viewing Memories
-You can check what Nova remembers by visiting:
-```
-http://localhost:8000/api/memory
-```
+### Data Storage
+All data is stored locally in `backend/data/nova.db` (SQLite). Nothing is sent to third parties except:
+- Claude API (for conversation)
+- OpenAI Whisper (for voice transcription)
+- Google APIs (if connected, for email/calendar)
+- Push services (Apple/Google, for notifications)
 
-## 6. Chat History
-
-- Conversations are stored locally in `backend/data/nova.db`
-- History persists across browser refreshes
-- Each browser session gets a unique session ID stored in localStorage
-- To start completely fresh, delete `backend/data/nova.db` and restart the backend
-
-## 7. Troubleshooting
+## 10. Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| "Cannot connect to server" | Make sure the backend is running on port 8000 |
-| No response from Nova | Check that your `ANTHROPIC_API_KEY` is set in `backend/.env` |
-| Backend won't start | Run `cd backend && npm install` to reinstall dependencies |
-| Frontend won't start | Run `cd frontend && npm install` to reinstall dependencies |
-| Port already in use | Kill existing processes: `taskkill /f /im node.exe` and restart |
-| No voice output (TTS) | Click anywhere on the page first (autoplay policy requires interaction), then send a message. Check console for `[Voice] Selected TTS voice:` log |
-| TTS cuts off mid-sentence | This is the Chrome 15s bug — already mitigated by sentence chunking. If it persists, try shorter messages |
-| Wrong voice / robotic voice | Open console (F12) and check which voice was selected. Windows "Zira" is preferred. You can install more voices via Windows Settings > Time & Language > Speech |
+| App shows blank screen | Clear Safari data: Settings → Safari → Clear History and Website Data |
+| Service worker stuck | Visit `https://nova.srv1042999.hstgr.cloud/clear-sw.html` |
+| "Not authenticated" | Your session expired. Re-enter your PIN. |
+| Push notifications not arriving | 1. Must use PWA (Add to Home Screen) 2. Toggle notifications OFF then ON in Settings 3. Check iOS Settings → Notifications → Nova is allowed |
+| Google shows "Not connected" after connecting | Refresh the page — OAuth redirects back automatically |
+| Mic requires multiple taps | Should be fixed in v2.0. If persists, try force-closing and reopening the PWA |
+| Text too small | Should be fixed in v2.0 (16px minimum). If old styles are cached, clear Safari data |
+| Weather not showing | Grant location permission when prompted, or set location manually in Settings |
+| Scheduled message didn't fire | Check that: 1. Push notifications are enabled 2. Time is set correctly (uses PST timezone) 3. Message wasn't already sent today |
+| Chat not responding | Check backend is running: the server auto-starts but may need restart after VPS reboot |
+
+### Restarting the Backend
+```bash
+ssh root@srv1042999.hstgr.cloud
+cd /opt/nova/backend
+pkill -f "node server.js"
+nohup node server.js > /tmp/nova-server.log 2>&1 &
+```
+
+### Checking Logs
+```bash
+cat /tmp/nova-server.log
+# Look for [Scheduler], [Push], [DB] prefixed lines
+```

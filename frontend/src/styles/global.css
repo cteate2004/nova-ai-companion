@@ -28,6 +28,10 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+html {
+  overscroll-behavior: none;
+}
+
 body {
   background: linear-gradient(160deg, var(--bg-start) 0%, var(--bg-mid) 30%, #0f3460 60%, var(--bg-end) 100%);
   color: var(--text);
@@ -37,6 +41,11 @@ body {
   width: 100vw;
   -webkit-font-smoothing: antialiased;
   touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+button, input, a {
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
@@ -512,74 +521,129 @@ body {
 .login-screen {
   position: fixed;
   inset: 0;
-  background: var(--bg-start);
+  background: linear-gradient(160deg, var(--bg-start) 0%, var(--bg-mid) 30%, #0f3460 60%, var(--bg-end) 100%);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 100;
+  padding: calc(24px + var(--safe-top)) 24px calc(24px + var(--safe-bottom));
 }
-.login-box {
-  text-align: center;
-  padding: 40px;
+
+.login-branding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
 }
+
+.login-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 15%;
+  border: 2px solid rgba(200, 160, 255, 0.5);
+  box-shadow: 0 0 32px rgba(200, 160, 255, 0.25), 0 8px 32px rgba(0, 0, 0, 0.4);
+  margin-bottom: 16px;
+}
+
 .login-title {
   font-size: 48px;
   font-weight: 200;
   color: var(--accent);
-  letter-spacing: 8px;
+  letter-spacing: 10px;
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  line-height: 1;
 }
+
+.login-tagline {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 320px;
+  background: rgba(200, 160, 255, 0.06);
+  border: 1px solid rgba(200, 160, 255, 0.15);
+  border-radius: 24px;
+  padding: 32px 28px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 .login-subtitle {
   color: var(--text-dim);
   font-size: 14px;
-  margin-bottom: 32px;
+  text-align: center;
+  margin-bottom: 20px;
+  letter-spacing: 0.3px;
 }
+
 .login-input {
   display: block;
-  width: 200px;
-  margin: 0 auto 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 14px 20px;
+  width: 100%;
+  margin: 0 0 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(200, 160, 255, 0.2);
+  border-radius: 14px;
+  padding: 16px 20px;
   color: var(--text);
-  font-size: 24px;
+  font-size: 22px;
   text-align: center;
-  letter-spacing: 8px;
+  letter-spacing: 10px;
   outline: none;
-  transition: border-color 200ms;
+  transition: border-color 250ms, box-shadow 250ms, background 250ms;
+  -webkit-appearance: none;
 }
 .login-input:focus {
   border-color: var(--accent);
+  background: rgba(200, 160, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(200, 160, 255, 0.12), 0 0 16px rgba(200, 160, 255, 0.1);
 }
 .login-input::placeholder {
-  color: var(--text-dim);
-  letter-spacing: 2px;
+  color: var(--text-muted);
+  letter-spacing: 3px;
   font-size: 14px;
 }
+
 .login-error {
-  color: #e74c3c;
+  color: #ff6b6b;
   font-size: 13px;
+  text-align: center;
   margin-bottom: 12px;
+  min-height: 20px;
 }
+
 .login-btn {
-  background: var(--accent);
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent) 0%, rgba(160, 120, 220, 1) 100%);
   border: none;
-  border-radius: 12px;
-  padding: 12px 40px;
-  color: var(--bg-start);
+  border-radius: 14px;
+  padding: 16px 40px;
+  color: #1a1a2e;
   font-size: 16px;
   font-weight: 600;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: opacity 200ms;
+  transition: opacity 200ms, transform 100ms;
+  box-shadow: 0 4px 20px rgba(200, 160, 255, 0.3);
+}
+.login-btn:active {
+  transform: scale(0.98);
 }
 .login-btn:hover {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 .login-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* ===== PARTICLE CANVAS ===== */
@@ -649,9 +713,10 @@ body {
   left: 0;
   right: 0;
   bottom: var(--tab-height);
-  padding-top: var(--safe-top);
+  padding-top: calc(16px + var(--safe-top));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
   animation: fadeIn 250ms ease-out;
 }
 

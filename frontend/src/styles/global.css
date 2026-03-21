@@ -690,6 +690,7 @@ button, input, a {
 .tab-icon { font-size: 22px; line-height: 1; }
 
 .tab-label {
+  display: none;
   font-size: 10px;
   color: var(--text-muted);
   transition: color 200ms;
@@ -1227,4 +1228,151 @@ button, input, a {
   font-size: 14px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* === Memory Screen === */
+.memory-back-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 12px 0 0;
+  line-height: 1;
+}
+.memory-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.memory-item:last-child { border-bottom: none; }
+.memory-fact {
+  flex: 1;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  min-height: 20px;
+}
+.memory-edit-input {
+  flex: 1;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  padding: 6px 8px;
+  outline: none;
+}
+.memory-meta {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.memory-delete-btn {
+  background: none;
+  border: none;
+  color: rgba(255,100,100,0.7);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.memory-error {
+  background: rgba(255,80,80,0.15);
+  color: #ff6b6b;
+  text-align: center;
+  padding: 8px;
+  border-radius: 8px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+/* === Grocery Screen === */
+.grocery-action-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 18px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.grocery-action-btn:active {
+  background: rgba(255,255,255,0.15);
+}
+.grocery-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.grocery-item:last-child { border-bottom: none; }
+.grocery-item-name {
+  flex: 1;
+  color: var(--text);
+  font-size: 14px;
+}
+.grocery-item-name.checked {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+.grocery-item-qty {
+  color: var(--text-muted);
+  font-size: 12px;
+  background: rgba(255,255,255,0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* === Print Styles === */
+.grocery-print {
+  display: none;
+}
+
+@media print {
+  .app > *:not(.grocery-screen) { display: none !important; }
+  .tab-bar,
+  .screen-header,
+  .fab,
+  .task-add-overlay,
+  .grocery-action-btn,
+  .grocery-screen > *:not(.grocery-print) { display: none !important; }
+
+  .grocery-print {
+    display: block !important;
+    color: #000;
+    background: #fff;
+    padding: 20px;
+    font-family: -apple-system, system-ui, sans-serif;
+  }
+  .grocery-print h1 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: #000;
+  }
+  .grocery-print h3 {
+    font-size: 14px;
+    margin: 12px 0 4px;
+    color: #333;
+  }
+  .grocery-print ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .grocery-print li {
+    padding: 3px 0;
+    font-size: 13px;
+    color: #000;
+  }
+  .grocery-print li::before {
+    content: '\25A1  ';
+    font-size: 12px;
+  }
+
+  .particle-bg { display: none !important; }
+  body { background: #fff !important; }
 }

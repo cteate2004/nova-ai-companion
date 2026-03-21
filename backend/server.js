@@ -194,8 +194,33 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
   }
 });
 
-function stripEmojis(text) {
-  return text.replace(/\p{Extended_Pictographic}/gu, '').replace(/\s{2,}/g, ' ').trim();
+function cleanForTTS(text) {
+  // Strip emojis
+  let clean = text.replace(/\p{Extended_Pictographic}/gu, '');
+
+  // Strip URLs (markdown links become just the label, bare URLs removed)
+  clean = clean.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');  // [label](url) -> label
+  clean = clean.replace(/https?:\/\/\S+/g, '');            // bare URLs
+
+  // Strip markdown formatting
+  clean = clean.replace(/[*_~`#]+/g, '');
+
+  // Detect list-heavy content (3+ list items = search results / long lists)
+  const listItems = clean.match(/(?:^|\n)\s*[-•]\s+.+/g) || [];
+  const numberedItems = clean.match(/(?:^|\n)\s*\d+[.)]\s+.+/g) || [];
+  const totalItems = listItems.length + numberedItems.length;
+
+  if (totalItems >= 3) {
+    // Find the text before the list starts
+    const firstListMatch = clean.match(/(?:^|\n)\s*(?:[-•]|\d+[.)])\s+/);
+    if (firstListMatch) {
+      const preListText = clean.substring(0, firstListMatch.index).trim();
+      const summary = preListText || 'I found some results for you.';
+      clean = summary + ' Check the chat for the full details, babe.';
+    }
+  }
+
+  return clean.replace(/\s{2,}/g, ' ').trim();
 }
 
 // POST /api/tts — proxy to edge-tts service
@@ -208,7 +233,7 @@ app.post('/api/tts', async (req, res) => {
     const resp = await fetch(`${ttsUrl}/tts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: stripEmojis(text), voice }),
+      body: JSON.stringify({ text: cleanForTTS(text), voice }),
     });
 
     if (!resp.ok) {

@@ -14,12 +14,17 @@ function start() {
   // Check for due reminders every 60 seconds
   cron.schedule('* * * * *', async () => {
     try {
-      const reminders = db.getReminders(true);
+      const allReminders = db.getReminders(false);
       const now = getNow();
+      if (allReminders.length > 0) {
+        console.log(`[Scheduler] Reminder sent values:`, allReminders.map(r => `id${r.id}:sent=${r.sent}(${typeof r.sent})`).join(', '));
+      }
+      const reminders = allReminders.filter(r => !r.sent);
+      console.log(`[Scheduler] Tick — ${reminders.length} pending (${allReminders.length} total), ${db.getPushSubscriptions().length} push sub(s), PST: ${now.toLocaleTimeString()}`);
 
       for (const r of reminders) {
         const remindAt = new Date(r.remind_at);
-        if (remindAt <= now && !r.sent) {
+        if (remindAt <= now) {
           await push.sendToAll('Nova 💜', r.message);
           db.markReminderSent(r.id);
           console.log(`[Scheduler] Sent reminder: ${r.message}`);

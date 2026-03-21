@@ -353,6 +353,19 @@ app.get('/api/push/vapid-key', (req, res) => {
   res.json({ publicKey: key });
 });
 
+// Test push endpoint
+app.post('/api/push/test', async (req, res) => {
+  const push = require('./push');
+  const subs = db.getPushSubscriptions();
+  console.log(`[API] Test push: ${subs.length} subs`);
+  try {
+    const results = await push.sendToAll('Nova 💜', req.body.message || 'Test notification from Nova! 💜');
+    res.json({ sent: results.length, results });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // SPA fallback — serve index.html for non-API routes (Express 5 syntax)
 app.get('{*path}', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));

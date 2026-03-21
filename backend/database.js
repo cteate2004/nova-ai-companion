@@ -238,6 +238,7 @@ function getReminders(pendingOnly) {
   let sql = 'SELECT * FROM reminders';
   if (pendingOnly) sql += ' WHERE sent = 0';
   sql += ' ORDER BY remind_at ASC';
+  console.log('[DB] getReminders called, db exists:', !!db, 'pendingOnly:', pendingOnly);
   const stmt = db.prepare(sql);
   const rows = [];
   while (stmt.step()) {
@@ -248,6 +249,7 @@ function getReminders(pendingOnly) {
 }
 
 function createReminder(message, remindAt) {
+  console.log('[DB] createReminder called, db exists:', !!db);
   db.run(
     'INSERT INTO reminders (message, remind_at) VALUES (?, ?)',
     [message, remindAt]

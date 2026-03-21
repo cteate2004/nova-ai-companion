@@ -1,26 +1,61 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 async function subscribePush(authToken) {
-  const permission = await Notification.requestPermission();
-  if (permission !== 'granted') return false;
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      alert('Notification permission denied: ' + permission);
+      return false;
+    }
 
-  const reg = await navigator.serviceWorker.ready;
-  const vapidResp = await fetch('/api/push/vapid-key', {
-    headers: { Authorization: `Bearer ${authToken}` },
-  });
-  const { publicKey } = await vapidResp.json();
+    if (!navigator.serviceWorker) {
+      alert('Service worker not available. Are you using the PWA from the home screen?');
+      return false;
+    }
 
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: publicKey,
-  });
+    const reg = await navigator.serviceWorker.ready;
+    if (!reg.pushManager) {
+      alert('Push manager not available. Make sure you added Nova to your home screen.');
+      return false;
+    }
 
-  await fetch('/api/push/subscribe', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-    body: JSON.stringify(sub.toJSON()),
-  });
-  return true;
+    const vapidResp = await fetch('/api/push/vapid-key', {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+    const { publicKey } = await vapidResp.json();
+    if (!publicKey) {
+      alert('Could not get VAPID key from server.');
+      return false;
+    }
+
+    // Unsubscribe existing subscription if keys changed
+    const existingSub = await reg.pushManager.getSubscription();
+    if (existingSub) {
+      await existingSub.unsubscribe();
+    }
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: publicKey,
+    });
+
+    const subJson = sub.toJSON();
+    const res = await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+      body: JSON.stringify(subJson),
+    });
+
+    if (!res.ok) {
+      alert('Server rejected subscription: ' + res.status);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    alert('Push subscribe error: ' + err.message);
+    return false;
+  }
 }
 
 export default function SettingsScreen({ authToken }) {

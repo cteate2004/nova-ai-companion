@@ -45,6 +45,10 @@ A "Manage Memories" button in SettingsScreen opens a full-screen sub-view (not a
 
 ### Backend Changes
 
+**Fix existing:**
+
+- `getMemories()` must be updated to `SELECT id, fact, category, created_at, last_referenced FROM memories` (currently omits `id`, which the frontend needs for edit/delete)
+
 **New API routes:**
 
 | Method | Route             | Description                     |
@@ -52,32 +56,41 @@ A "Manage Memories" button in SettingsScreen opens a full-screen sub-view (not a
 | PATCH  | /api/memory/:id   | Update memory {fact, category}  |
 | DELETE | /api/memory/:id   | Delete a memory                 |
 
+**Validation for PATCH /api/memory/:id:**
+- Return 404 if id does not exist
+- Reject empty/whitespace-only `fact`
+- Only allow `fact` and `category` fields (whitelist, ignore others)
+- Return 400 if no valid fields provided
+
 **New database functions:**
 
-- `updateMemory(id, updates)` — partial update (fact and/or category), returns updated row
-- `deleteMemory(id)` — deletes a memory by id
+- `updateMemory(id, updates)` — partial update, whitelisted to `fact` and `category` only. Calls `persist()`. Returns updated row or null if id not found.
+- `deleteMemory(id)` — deletes a memory by id. Calls `persist()`.
 
 ### Frontend Changes
 
 **New component: `MemoryScreen.jsx`**
-- Receives `onBack` prop to return to Settings
+- Receives `onBack` and `authToken` props
 - Fetches memories from `GET /api/memory` on mount
 - Groups by category for display
 - Handles edit (PATCH) and delete (DELETE) with optimistic UI updates
+- On failed API calls, reverts local state and shows brief error
 
 **Modified: `SettingsScreen.jsx`**
-- Add "Manage Memories" button in a new section
-- When tapped, parent (App.jsx) switches to MemoryScreen sub-view
+- Add "Manage Memories" button with memory count badge (e.g. "Manage Memories (23)")
+- When tapped, calls `onNavigate('memory')` prop
 
 **Modified: `App.jsx`**
-- Track sub-screen state: when Settings is active and user taps "Manage Memories," render MemoryScreen instead of SettingsScreen
-- Back button returns to SettingsScreen
+- Add `settingsSubScreen` state (null or 'memory') in NovaApp
+- In `renderScreen()`, when `activeTab === 'settings'` and `settingsSubScreen === 'memory'`, render MemoryScreen instead of SettingsScreen
+- Reset `settingsSubScreen` to null when `activeTab` changes (navigating away returns to main Settings)
+- Pass `onNavigate` to SettingsScreen, `onBack` to MemoryScreen
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `backend/database.js` | Add `updateMemory()`, `deleteMemory()` |
+| `backend/database.js` | Fix `getMemories()` to include `id`; add `updateMemory()`, `deleteMemory()` |
 | `backend/server.js` | Add `PATCH /api/memory/:id`, `DELETE /api/memory/:id` |
 | `frontend/src/App.jsx` | Sub-screen state management for MemoryScreen |
 | `frontend/src/components/SettingsScreen.jsx` | Add "Manage Memories" button |
@@ -99,15 +112,15 @@ Strip all emoji characters from the text in the backend `/api/tts` route before 
 
 ### Implementation
 
-Add an `stripEmojis(text)` function in `server.js` (or inline) that removes Unicode emoji ranges using a regex. Apply it to the `text` field before sending to the TTS service.
+Add a `stripEmojis(text)` function in `server.js` using the Unicode property escape `\p{Extended_Pictographic}` (supported in Node.js). This is standards-based and stays current with new emoji additions.
 
 ```js
 function stripEmojis(text) {
-  return text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '').replace(/\s{2,}/g, ' ').trim();
+  return text.replace(/\p{Extended_Pictographic}/gu, '').replace(/\s{2,}/g, ' ').trim();
 }
 ```
 
-Applied at line 186 in server.js:
+Applied in the `POST /api/tts` route handler, to the `text` variable before constructing the fetch body:
 ```js
 body: JSON.stringify({ text: stripEmojis(text), voice }),
 ```

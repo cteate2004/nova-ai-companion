@@ -348,6 +348,33 @@ app.delete('/api/special-dates/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ===== Grocery =====
+app.get('/api/grocery', (req, res) => {
+  res.json(db.getGroceryItems());
+});
+app.post('/api/grocery/clear-checked', (req, res) => {
+  db.clearCheckedGroceryItems();
+  res.json({ ok: true });
+});
+app.post('/api/grocery/clear-all', (req, res) => {
+  db.clearAllGroceryItems();
+  res.json({ ok: true });
+});
+app.post('/api/grocery', (req, res) => {
+  const { name, category, quantity } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'name required' });
+  res.json(db.createGroceryItem(name.trim(), category, quantity));
+});
+app.patch('/api/grocery/:id', (req, res) => {
+  const result = db.updateGroceryItem(req.params.id, req.body);
+  if (!result) return res.status(404).json({ error: 'Item not found' });
+  res.json(result);
+});
+app.delete('/api/grocery/:id', (req, res) => {
+  db.deleteGroceryItem(req.params.id);
+  res.json({ ok: true });
+});
+
 // ===== Push Subscriptions =====
 app.post('/api/push/subscribe', (req, res) => {
   const { endpoint, keys } = req.body;

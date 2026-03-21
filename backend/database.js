@@ -105,6 +105,18 @@ async function init() {
     )
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS grocery_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      category TEXT DEFAULT 'Other',
+      quantity TEXT,
+      checked INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   persist();
   console.log('[DB] SQLite initialized');
 }
@@ -112,6 +124,29 @@ async function init() {
 function persist() {
   const data = db.export();
   fs.writeFileSync(DB_PATH, Buffer.from(data));
+}
+
+// --- Grocery category auto-mapping ---
+const GROCERY_CATEGORY_MAP = [
+  ['Produce', ['green onion', 'jalapeño', 'bell pepper', 'sweet potato', 'apple', 'banana', 'orange', 'lemon', 'lime', 'avocado', 'tomato', 'potato', 'onion', 'garlic', 'lettuce', 'spinach', 'kale', 'carrot', 'celery', 'broccoli', 'pepper', 'cucumber', 'mushroom', 'corn', 'berry', 'strawberry', 'blueberry', 'grape', 'melon', 'watermelon', 'peach', 'pear', 'mango', 'pineapple', 'cilantro', 'basil', 'ginger', 'zucchini']],
+  ['Dairy', ['half and half', 'sour cream', 'milk', 'cheese', 'yogurt', 'butter', 'cream', 'eggs', 'creamer']],
+  ['Meat & Seafood', ['ground beef', 'chicken', 'beef', 'pork', 'turkey', 'salmon', 'shrimp', 'fish', 'steak', 'bacon', 'sausage', 'ham', 'lamb', 'crab', 'lobster', 'tuna']],
+  ['Bakery', ['bread', 'bagel', 'tortilla', 'roll', 'muffin', 'croissant', 'bun', 'pita', 'cake', 'donut']],
+  ['Frozen', ['ice cream', 'frozen pizza', 'frozen vegetables', 'frozen fruit', 'popsicle', 'frozen dinner', 'frozen waffle']],
+  ['Pantry', ['peanut butter', 'rice', 'pasta', 'cereal', 'flour', 'sugar', 'oil', 'vinegar', 'sauce', 'soup', 'beans', 'canned', 'jelly', 'honey', 'salt', 'spice', 'seasoning', 'oatmeal', 'noodle']],
+  ['Beverages', ['water', 'juice', 'soda', 'coffee', 'tea', 'wine', 'beer', 'sparkling', 'kombucha', 'lemonade']],
+  ['Snacks', ['granola bar', 'trail mix', 'chips', 'crackers', 'cookies', 'popcorn', 'nuts', 'pretzels', 'candy']],
+  ['Household', ['paper towels', 'toilet paper', 'dish soap', 'laundry detergent', 'trash bags', 'sponge', 'aluminum foil', 'plastic wrap', 'napkins', 'cleaning spray', 'bleach']],
+];
+
+function autoCategory(itemName) {
+  const lower = itemName.toLowerCase();
+  for (const [category, keywords] of GROCERY_CATEGORY_MAP) {
+    for (const kw of keywords) {
+      if (lower.includes(kw)) return category;
+    }
+  }
+  return 'Other';
 }
 
 function saveMessage(sessionId, role, content) {
@@ -454,6 +489,109 @@ function deleteSpecialDate(id) {
   persist();
 }
 
+// --- Grocery Items ---
+
+const CATEGORY_DISPLAY_ORDER = ['Produce', 'Dairy', 'Meat & Seafood', 'Bakery', 'Frozen', 'Pantry', 'Beverages', 'Snacks', 'Household', 'Other'];
+
+function getGroceryItems() {
+  const stmt = db.prepare('SELECT * FROM grocery_items ORDER BY checked ASC, name ASC');
+  const rows = [];
+  while (stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+  rows.sort((a, b) => {
+    const catA = CATEGORY_DISPLAY_ORDER.indexOf(a.category);
+    const catB = CATEGORY_DISPLAY_ORDER.indexOf(b.category);
+    if (catA !== catB) return (catA === -1 ? 99 : catA) - (catB === -1 ? 99 : catB);
+    if (a.checked !== b.checked) return a.checked - b.checked;
+    return a.name.localeCompare(b.name);
+  });
+  return rows;
+}
+
+function createGroceryItem(name, category, quantity) {
+  const cat = category || autoCategory(name);
+  db.run(
+    'INSERT INTO grocery_items (name, category, quantity) VALUES (?, ?, ?)',
+    [name, cat, quantity || null]
+  );
+  persist();
+  const stmt = db.prepare('SELECT * FROM grocery_items ORDER BY id DESC LIMIT 1');
+  stmt.step();
+  const row = stmt.getAsObject();
+  stmt.free();
+  return row;
+}
+
+function updateGroceryItem(id, updates) {
+  const allowed = ['name', 'category', 'quantity', 'checked'];
+  const fields = [];
+  const values = [];
+  for (const [key, val] of Object.entries(updates)) {
+    if (allowed.includes(key)) {
+      fields.push(`${key} = ?`);
+      values.push(val);
+    }
+  }
+  if (fields.length === 0) return null;
+  fields.push('updated_at = CURRENT_TIMESTAMP');
+  values.push(id);
+  db.run(`UPDATE grocery_items SET ${fields.join(', ')} WHERE id = ?`, values);
+  persist();
+  const stmt = db.prepare('SELECT * FROM grocery_items WHERE id = ?');
+  stmt.bind([id]);
+  if (!stmt.step()) { stmt.free(); return null; }
+  const row = stmt.getAsObject();
+  stmt.free();
+  return row;
+}
+
+function deleteGroceryItem(id) {
+  db.run('DELETE FROM grocery_items WHERE id = ?', [id]);
+  persist();
+}
+
+function clearCheckedGroceryItems() {
+  db.run('DELETE FROM grocery_items WHERE checked = 1');
+  persist();
+}
+
+function clearAllGroceryItems() {
+  db.run('DELETE FROM grocery_items');
+  persist();
+}
+
+function checkGroceryItemsByName(names) {
+  const results = [];
+  for (const name of names) {
+    const stmt = db.prepare("SELECT * FROM grocery_items WHERE LOWER(name) LIKE ? AND checked = 0");
+    stmt.bind(['%' + name.toLowerCase() + '%']);
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      db.run('UPDATE grocery_items SET checked = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [row.id]);
+      results.push(row.name);
+    }
+    stmt.free();
+  }
+  if (results.length > 0) persist();
+  return results;
+}
+
+function removeGroceryItemsByName(names) {
+  const results = [];
+  for (const name of names) {
+    const stmt = db.prepare("SELECT * FROM grocery_items WHERE LOWER(name) LIKE ?");
+    stmt.bind(['%' + name.toLowerCase() + '%']);
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      results.push(row.name);
+    }
+    stmt.free();
+    db.run("DELETE FROM grocery_items WHERE LOWER(name) LIKE ?", ['%' + name.toLowerCase() + '%']);
+  }
+  if (results.length > 0) persist();
+  return results;
+}
+
 // --- Push Subscriptions ---
 
 function getPushSubscriptions() {
@@ -518,4 +656,14 @@ module.exports = {
   getPushSubscriptions,
   savePushSubscription,
   deletePushSubscription,
+  // Grocery
+  getGroceryItems,
+  createGroceryItem,
+  updateGroceryItem,
+  deleteGroceryItem,
+  clearCheckedGroceryItems,
+  clearAllGroceryItems,
+  checkGroceryItemsByName,
+  removeGroceryItemsByName,
+  autoCategory,
 };

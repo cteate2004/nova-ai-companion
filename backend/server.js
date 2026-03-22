@@ -42,6 +42,14 @@ app.get('/api/auth/check', (req, res) => {
   res.json({ authenticated: false });
 });
 
+app.post('/api/auth/revoke', (req, res) => {
+  const { token } = req.body;
+  if (token && activeSessions.has(token)) {
+    activeSessions.delete(token);
+  }
+  res.json({ revoked: true });
+});
+
 // --- Auth middleware for all /api routes below ---
 app.use('/api', (req, res, next) => {
   // Skip auth check for auth endpoints

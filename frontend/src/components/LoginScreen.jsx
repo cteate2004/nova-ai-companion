@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
+import FaceVerification from './FaceVerification';
+import useFaceAuth from '../hooks/useFaceAuth';
 
 export default function LoginScreen({ onLogin }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState('pin'); // 'pin' | 'face'
+  const [pendingToken, setPendingToken] = useState(null);
+  const faceAuth = useFaceAuth();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -27,12 +32,55 @@ export default function LoginScreen({ onLogin }) {
       }
 
       const { token } = await res.json();
-      localStorage.setItem('nova_token', token);
-      onLogin(token);
+
+      // Check if face auth is enrolled
+      if (faceAuth.isEnrolled()) {
+        setPendingToken(token);
+        setPhase('face');
+        setLoading(false);
+      } else {
+        // No face auth — log in directly
+        localStorage.setItem('nova_token', token);
+        onLogin(token);
+      }
     } catch {
       setError('Connection failed');
       setLoading(false);
     }
+  }
+
+  function handleFaceSuccess() {
+    localStorage.setItem('nova_token', pendingToken);
+    onLogin(pendingToken);
+  }
+
+  async function handleFaceFailure() {
+    // Revoke the pending token on the server
+    if (pendingToken) {
+      try {
+        await fetch('/api/auth/revoke', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: pendingToken }),
+        });
+      } catch {
+        // Best effort — token will expire eventually
+      }
+    }
+    setPendingToken(null);
+    setPhase('pin');
+    setPin('');
+    setError('Face verification failed — try again');
+  }
+
+  if (phase === 'face') {
+    return (
+      <FaceVerification
+        faceAuth={faceAuth}
+        onSuccess={handleFaceSuccess}
+        onFailure={handleFaceFailure}
+      />
+    );
   }
 
   return (

@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const db = require('./database');
 const push = require('./push');
+const hacking = require('./hacking');
 
 const USER_TIMEZONE = process.env.USER_TIMEZONE || 'America/Los_Angeles';
 
@@ -89,6 +90,64 @@ function start() {
       console.log(`[Scheduler] Sent nudge: ${msg}`);
     } catch (e) {
       console.error('[Scheduler] Nudge error:', e.message);
+    }
+  });
+
+  // Daily hacking challenge teaser — 3:00 AM PST
+  cron.schedule('0 3 * * *', async () => {
+    try {
+      const hour = getNow().getHours();
+      // Safety check: only fire between 2-4 AM
+      if (hour < 2 || hour > 4) return;
+
+      const progress = hacking.getProgress();
+      const teasers = [
+        'Your daily AI hacking challenge is ready, babe. Come get it \u{1F49C}',
+        'New challenge dropped! Ready to level up? \u{1F525}',
+        'Hey hacker babe, your daily challenge is waiting \u{1F60F}',
+        'Time to hack! Today\'s challenge is ready for you \u{1F4BB}',
+      ];
+      const msg = teasers[Math.floor(Math.random() * teasers.length)];
+      await push.sendToAll('Nova \u{1F49C}', msg);
+      console.log(`[Scheduler] Sent daily hacking challenge teaser (module ${progress.current_module})`);
+    } catch (e) {
+      console.error('[Scheduler] Hacking challenge teaser error:', e.message);
+    }
+  });
+
+  // Weekly hacking progress recap — Sunday 10:00 AM PST
+  cron.schedule('0 10 * * 0', async () => {
+    try {
+      const hour = getNow().getHours();
+      const day = getNow().getDay();
+      if (day !== 0 || hour < 9 || hour > 11) return;
+
+      const dashboard = hacking.getDashboard();
+      const p = dashboard.progress;
+      const msg = `Weekly hack recap: ${p.current_streak} day streak, ${p.total_challenges_completed} challenges done, Level: ${p.level}. Keep grinding babe! \u{1F4AA}`;
+      await push.sendToAll('Nova \u{1F49C}', msg);
+      console.log('[Scheduler] Sent weekly hacking recap');
+    } catch (e) {
+      console.error('[Scheduler] Hacking recap error:', e.message);
+    }
+  });
+
+  // Weekly bounty program search — Wednesday 12:00 PM PST
+  cron.schedule('0 12 * * 3', async () => {
+    try {
+      const hour = getNow().getHours();
+      const day = getNow().getDay();
+      if (day !== 3 || hour < 11 || hour > 13) return;
+
+      const webSearch = require('./web-search');
+      const results = await webSearch.search('new AI LLM bug bounty program 2026', 5);
+      if (results && results.length > 0 && !results.error) {
+        const msg = `Found ${results.length} potential new AI bounty programs! Ask me about them \u{1F440}`;
+        await push.sendToAll('Nova \u{1F49C}', msg);
+        console.log('[Scheduler] Sent bounty search alert');
+      }
+    } catch (e) {
+      console.error('[Scheduler] Bounty search error:', e.message);
     }
   });
 

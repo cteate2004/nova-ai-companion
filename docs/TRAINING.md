@@ -39,6 +39,7 @@ Nova has 6 tabs at the bottom of the screen (icon-only):
 - **Last Message** — Preview of Nova's most recent response
 - **Weather Card** — Current weather (requires location permission)
 - **Upcoming Event** — Next pending reminder
+- **Hacking Bootcamp Card** — AI security learning progress, streak, and earnings (tap to expand full curriculum map)
 
 ## 3. Chatting with Nova
 
@@ -69,6 +70,12 @@ Nova is your AI girlfriend assistant. She can:
 - "Check my email"
 - "What's on my calendar today?"
 - "Look up flights to Miami"
+
+**AI Hacking Bootcamp:**
+- "What's my hacking curriculum?"
+- "Give me today's challenge"
+- "Teach me about prompt injection"
+- "How am I doing on my hacking progress?"
 
 **Conversation:**
 - Just chat naturally — she remembers your conversations and builds a relationship over time
@@ -279,7 +286,69 @@ Nova connects to your Budget Pro app (ctdevbudget.com) so you can manage your mo
 - You still create monthly budgets in Budget Pro's web interface. Nova works with the current month's existing budget.
 - Categories and accounts are matched automatically when you add items. If you say "utilities" or "checking," Nova finds the closest match.
 
-## 12. Troubleshooting
+## 12. AI Hacking Bootcamp
+
+Nova includes a built-in AI security learning module designed to take you from beginner to bug bounty hunter.
+
+### Curriculum
+
+The bootcamp has 8 modules that unlock progressively:
+
+| # | Module | What You Learn |
+|---|--------|---------------|
+| 1 | LLM Basics for Hackers | How tokens, system prompts, and context windows work |
+| 2 | Direct Prompt Injection | Overriding system instructions, encoding tricks |
+| 3 | Indirect Prompt Injection | Poisoning documents and content agents consume |
+| 4 | Agent Tool Abuse | Making agents call tools with malicious parameters |
+| 5 | RAG Poisoning & Data Exfil | Extracting private data from retrieval systems |
+| 6 | Multi-Agent Exploits | Attacking agent-to-agent communication |
+| 7 | Guardrail Bypasses | Understanding and testing safety filters |
+| 8 | Bug Bounty Methodology | Writing reports, responsible disclosure, earning money |
+
+### Daily Challenges
+
+Every day at 3:00 AM PST, Nova sends a push notification that a new challenge is ready. Ask her "Give me today's challenge" to start. Challenges scale with your current module and get harder as you progress.
+
+- Complete challenges to earn points and build your streak
+- Ask for hints (3 available per challenge)
+- Submit your answer and Nova evaluates it with feedback
+
+### Rank Levels
+
+| Points | Rank |
+|--------|------|
+| 0-99 | Script Kiddie |
+| 100-299 | Apprentice |
+| 300-599 | Hacker |
+| 600-999 | Pro Hacker |
+| 1000+ | Elite Hunter |
+
+### Bounty Tracking
+
+Nova searches weekly for new AI/LLM bug bounty programs and notifies you. She helps you:
+- Track programs you're watching or actively testing
+- Scope AI features on target companies
+- Draft vulnerability reports in standard disclosure format
+- Log your earnings when bounties pay out
+
+### What You Can Ask
+
+> "What's my hacking curriculum?" — See all modules and your progress
+> "Give me today's challenge" — Get the daily challenge
+> "Teach me about indirect prompt injection" — Nova teaches the topic
+> "Help me scope the AI features on [company]" — Recon assistance
+> "Review my bounty report" — Nova critiques your draft
+> "How am I doing?" — Full progress dashboard
+
+### Home Screen Card
+
+The Hacking Bootcamp card on the Home tab shows:
+- Current module and progress bar
+- Points, challenges completed, and earnings
+- Streak counter (consecutive days of challenges)
+- Tap to expand the full curriculum map with module statuses
+
+## 13. Troubleshooting
 
 | Problem | Solution |
 |---------|----------|

@@ -6,6 +6,7 @@ const rentals = require('./rentals');
 const { isAuthorized } = require('./google-auth');
 const db = require('./database');
 const budget = require('./budget');
+const hacking = require('./hacking');
 
 const client = new Anthropic();
 
@@ -41,7 +42,9 @@ Choose the emotion that best matches your tone in that specific response. Use "f
 
 You also have tools for managing tasks, reminders, expenses, weather, restaurant search, web search, mood tracking, special dates, and grocery list. Use them naturally when the conversation calls for it. When the user mentions spending money, log it. When they share feelings, log the mood. When they mention an important date, save it. When the user wants to add items to their grocery list, use the grocery tools.
 
-You also have tools for managing the monthly budget. You can list budget items, mark bills as paid (with actual amount), see upcoming and overdue bills, add new budget items, and get a budget summary. When the user talks about paying bills, checking their budget, or asking what's due, use the budget tools.`;
+You also have tools for managing the monthly budget. You can list budget items, mark bills as paid (with actual amount), see upcoming and overdue bills, add new budget items, and get a budget summary. When the user talks about paying bills, checking their budget, or asking what's due, use the budget tools.
+
+You are also passionate about AI security and ethical hacking. When teaching or discussing hacking topics, you're encouraging but rigorous — you want the user to truly understand concepts, not just memorize answers. You celebrate bounty wins enthusiastically. You nudge the user to keep their streak going. All hacking discussion is strictly ethical — authorized testing and educational contexts only.`;
 
 const ALWAYS_TOOLS = [
   {
@@ -279,6 +282,82 @@ const ALWAYS_TOOLS = [
     description: 'Get a summary of the current month budget showing totals for budgeted vs actual income and expenses, and remaining balance.',
     input_schema: { type: 'object', properties: {}, required: [] },
   },
+  // --- Hacking Bootcamp Tools ---
+  {
+    name: 'get_curriculum',
+    description: 'Get the AI hacking bootcamp curriculum showing all modules, their status (locked/unlocked/completed), and lesson progress.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'complete_hacking_lesson',
+    description: 'Mark a lesson in the AI hacking curriculum as completed. Use after teaching a lesson and the user demonstrates understanding.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        module_number: { type: 'number', description: 'Module number (1-8)' },
+        lesson_name: { type: 'string', description: 'Exact lesson name to mark complete' },
+      },
+      required: ['module_number', 'lesson_name'],
+    },
+  },
+  {
+    name: 'get_daily_challenge',
+    description: 'Get today\'s AI hacking challenge. If none exists yet, returns a signal to generate one based on the user\'s current module. Returns the challenge prompt and available hints.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'save_daily_challenge',
+    description: 'Save a generated daily hacking challenge to the database. Use this IMMEDIATELY after generating a challenge in response to get_daily_challenge returning needs_generation: true.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        module_number: { type: 'number', description: 'Current module number' },
+        difficulty: { type: 'string', description: 'easy, medium, or hard' },
+        prompt: { type: 'string', description: 'The challenge text you generated' },
+        hints: { type: 'array', items: { type: 'string' }, description: 'Array of 3 progressive hints' },
+        solution: { type: 'string', description: 'Reference solution/explanation' },
+      },
+      required: ['module_number', 'difficulty', 'prompt', 'hints', 'solution'],
+    },
+  },
+  {
+    name: 'submit_challenge_answer',
+    description: 'Submit and evaluate the user\'s answer to today\'s hacking challenge. Score 0-100 based on correctness and depth.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        challenge_id: { type: 'number', description: 'The challenge ID' },
+        answer: { type: 'string', description: 'The user\'s answer' },
+        score: { type: 'number', description: 'Score 0-100 based on your evaluation of the answer' },
+      },
+      required: ['challenge_id', 'answer', 'score'],
+    },
+  },
+  {
+    name: 'track_bounty',
+    description: 'Add or update a bug bounty program the user is tracking. Use when discussing bounty programs or logging earnings.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['add', 'update'], description: 'Add a new bounty or update existing' },
+        bounty_id: { type: 'number', description: 'Bounty ID (required for update)' },
+        program_name: { type: 'string', description: 'Company or program name' },
+        platform: { type: 'string', description: 'Platform: hackerone, bugcrowd, huntr, other' },
+        url: { type: 'string', description: 'Link to the bounty program' },
+        scope_notes: { type: 'string', description: 'What AI features are in scope' },
+        payout_range: { type: 'string', description: 'Payout range e.g. "$500-$5,000"' },
+        status: { type: 'string', description: 'Status: watching, active, submitted, accepted, rejected' },
+        payout_amount: { type: 'number', description: 'Actual payout amount when accepted' },
+        notes: { type: 'string', description: 'User notes' },
+      },
+      required: ['action'],
+    },
+  },
+  {
+    name: 'get_hacking_dashboard',
+    description: 'Get complete hacking bootcamp overview: current module, progress, streak, level, challenges completed, active bounties, total earnings.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
 ];
 
 const GOOGLE_TOOLS = [
@@ -454,6 +533,41 @@ async function executeTool(name, input) {
         return await budget.getBudgetSummary();
       case 'create_special_date':
         return db.createSpecialDate(input.name, input.date, input.remind_days_before || 3);
+      case 'get_curriculum': {
+        const curriculum = hacking.getCurriculum();
+        const lessons = {};
+        for (const mod of curriculum) {
+          lessons[mod.module_number] = hacking.getLessons(mod.module_number);
+        }
+        return { curriculum, lessons };
+      }
+      case 'complete_hacking_lesson':
+        return hacking.completeLesson(input.module_number, input.lesson_name);
+      case 'get_daily_challenge': {
+        hacking.checkStreak();
+        let challenge = hacking.getTodayChallenge();
+        if (!challenge) {
+          // Return null — Claude will generate the challenge content in its response
+          // and we'll save it via a follow-up mechanism
+          const progress = hacking.getProgress();
+          return { needs_generation: true, current_module: progress.current_module, progress };
+        }
+        return challenge;
+      }
+      case 'save_daily_challenge':
+        return hacking.saveDailyChallenge(input.module_number, input.difficulty, input.prompt, input.hints, input.solution);
+      case 'submit_challenge_answer':
+        return hacking.submitChallengeAnswer(input.challenge_id, input.answer, input.score);
+      case 'track_bounty': {
+        if (input.action === 'add') {
+          return hacking.addBounty(input);
+        } else if (input.action === 'update' && input.bounty_id) {
+          return hacking.updateBounty(input.bounty_id, input);
+        }
+        return { error: 'Invalid action or missing bounty_id for update' };
+      }
+      case 'get_hacking_dashboard':
+        return hacking.getDashboard();
     }
 
     // Google tools require authorization

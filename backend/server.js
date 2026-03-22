@@ -400,6 +400,30 @@ app.delete('/api/grocery/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ===== Hacking Bootcamp =====
+app.get('/api/hacking/dashboard', (req, res) => {
+  const hacking = require('./hacking');
+  res.json(hacking.getDashboard());
+});
+app.get('/api/hacking/curriculum', (req, res) => {
+  const hacking = require('./hacking');
+  const curriculum = hacking.getCurriculum();
+  res.json(curriculum);
+});
+app.get('/api/hacking/progress', (req, res) => {
+  const hacking = require('./hacking');
+  res.json(hacking.getProgress());
+});
+app.get('/api/hacking/challenge/today', (req, res) => {
+  const hacking = require('./hacking');
+  const challenge = hacking.getTodayChallenge();
+  res.json(challenge || { none: true });
+});
+app.get('/api/hacking/bounties', (req, res) => {
+  const hacking = require('./hacking');
+  res.json(hacking.getBounties());
+});
+
 // ===== Push Subscriptions =====
 app.post('/api/push/subscribe', (req, res) => {
   const { endpoint, keys } = req.body;

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import FaceEnrollment from './FaceEnrollment';
+import useFaceAuth from '../hooks/useFaceAuth';
 
 async function subscribePush(authToken) {
   try {
@@ -66,6 +68,9 @@ export default function SettingsScreen({ authToken, onNavigate }) {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationSaved, setLocationSaved] = useState(false);
   const [memoryCount, setMemoryCount] = useState(0);
+  const faceAuth = useFaceAuth();
+  const [faceEnabled, setFaceEnabled] = useState(localStorage.getItem('nova_face_enabled') === 'true');
+  const [showEnrollment, setShowEnrollment] = useState(false);
 
   const headers = { Authorization: `Bearer ${authToken}` };
 
@@ -154,6 +159,23 @@ export default function SettingsScreen({ authToken, onNavigate }) {
     );
   };
 
+  // --- Face ID ---
+  const handleToggleFaceId = () => {
+    if (faceEnabled) {
+      faceAuth.clearEnrollment();
+      setFaceEnabled(false);
+    }
+  };
+
+  const handleEnrollComplete = () => {
+    setShowEnrollment(false);
+    setFaceEnabled(true);
+  };
+
+  const handleEnrollCancel = () => {
+    setShowEnrollment(false);
+  };
+
   return (
     <div className="screen-container">
       <div className="screen-header">
@@ -212,6 +234,54 @@ export default function SettingsScreen({ authToken, onNavigate }) {
           </span>
         </div>
       </div>
+
+      {/* Face ID */}
+      <div className="section-title">Face ID</div>
+      <div className="task-list-card settings-group">
+        <div className="toggle-row">
+          <span className="toggle-label">Face Verification</span>
+          <button
+            className={`toggle-switch ${faceEnabled ? 'on' : ''}`}
+            onPointerDown={faceEnabled ? handleToggleFaceId : undefined}
+            aria-label="Toggle face verification"
+          />
+        </div>
+        {!faceEnabled && (
+          <div className="settings-item">
+            <button
+              className="settings-btn"
+              onPointerDown={() => setShowEnrollment(true)}
+            >
+              Set Up Face ID
+            </button>
+          </div>
+        )}
+        {faceEnabled && (
+          <div className="settings-item">
+            <button
+              className="settings-btn"
+              onPointerDown={() => { faceAuth.clearEnrollment(); setFaceEnabled(false); }}
+            >
+              Reset Face ID
+            </button>
+          </div>
+        )}
+        <div className="settings-item">
+          <span className="settings-item-label" style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            {faceEnabled
+              ? 'Face verification is required after PIN entry'
+              : 'Add face recognition as a second factor'}
+          </span>
+        </div>
+      </div>
+
+      {showEnrollment && (
+        <FaceEnrollment
+          faceAuth={faceAuth}
+          onComplete={handleEnrollComplete}
+          onCancel={handleEnrollCancel}
+        />
+      )}
 
       {/* Weather Location */}
       <div className="section-title">Weather Location</div>

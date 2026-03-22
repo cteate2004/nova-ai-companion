@@ -1,0 +1,266 @@
+const db = require('./database');
+
+// --- Curriculum ---
+
+function getCurriculum() {
+  const SQL = db._getDb();
+  const stmt = SQL.prepare('SELECT * FROM hacking_curriculum ORDER BY module_number ASC');
+  const rows = [];
+  while (stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+  return rows;
+}
+
+function getLessons(moduleNumber) {
+  const SQL = db._getDb();
+  const stmt = SQL.prepare('SELECT * FROM hacking_lessons WHERE module_number = ? ORDER BY lesson_order ASC');
+  stmt.bind([moduleNumber]);
+  const rows = [];
+  while (stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+  return rows;
+}
+
+function completeLesson(moduleNumber, lessonName) {
+  const SQL = db._getDb();
+
+  // Find and mark lesson complete
+  const find = SQL.prepare('SELECT id, status FROM hacking_lessons WHERE module_number = ? AND lesson_name = ?');
+  find.bind([moduleNumber, lessonName]);
+  if (!find.step()) { find.free(); return { error: 'Lesson not found' }; }
+  const lesson = find.getAsObject();
+  find.free();
+
+  if (lesson.status === 'completed') {
+    return { error: 'Lesson already completed' };
+  }
+
+  SQL.run('UPDATE hacking_lessons SET status = ?, completed_at = ? WHERE id = ?',
+    ['completed', new Date().toISOString(), lesson.id]);
+
+  // Update curriculum lessons_completed count
+  SQL.run('UPDATE hacking_curriculum SET lessons_completed = lessons_completed + 1 WHERE module_number = ?',
+    [moduleNumber]);
+
+  // Check if all lessons in module are done
+  const check = SQL.prepare('SELECT lessons_total, lessons_completed FROM hacking_curriculum WHERE module_number = ?');
+  check.bind([moduleNumber]);
+  check.step();
+  const mod = check.getAsObject();
+  check.free();
+
+  let moduleCompleted = false;
+  if (mod.lessons_completed >= mod.lessons_total) {
+    SQL.run('UPDATE hacking_curriculum SET status = ?, completed_at = ? WHERE module_number = ?',
+      ['completed', new Date().toISOString(), moduleNumber]);
+
+    // Unlock next module
+    const nextMod = moduleNumber + 1;
+    if (nextMod <= 8) {
+      SQL.run('UPDATE hacking_curriculum SET status = ?, unlocked_at = ? WHERE module_number = ? AND status = ?',
+        ['unlocked', new Date().toISOString(), nextMod, 'locked']);
+    }
+
+    // Update progress current_module
+    SQL.run('UPDATE hacking_progress SET current_module = ?, updated_at = ? WHERE id = 1',
+      [Math.min(nextMod, 8), new Date().toISOString()]);
+
+    moduleCompleted = true;
+  }
+
+  db._persist();
+
+  return {
+    lesson_completed: lessonName,
+    module_number: moduleNumber,
+    lessons_done: mod.lessons_completed,
+    lessons_total: mod.lessons_total,
+    module_completed: moduleCompleted,
+    next_module_unlocked: moduleCompleted && moduleNumber < 8,
+  };
+}
+
+// --- Challenges ---
+
+function getTodayChallenge() {
+  const SQL = db._getDb();
+  const today = new Date().toISOString().split('T')[0];
+  const stmt = SQL.prepare('SELECT * FROM hacking_challenges WHERE challenge_date = ?');
+  stmt.bind([today]);
+  if (!stmt.step()) { stmt.free(); return null; }
+  const row = stmt.getAsObject();
+  stmt.free();
+  // Parse hints JSON
+  if (row.hints) {
+    try { row.hints = JSON.parse(row.hints); } catch { row.hints = []; }
+  }
+  return row;
+}
+
+function saveDailyChallenge(moduleNumber, difficulty, prompt, hints, solution) {
+  const SQL = db._getDb();
+  const today = new Date().toISOString().split('T')[0];
+
+  // Don't overwrite existing challenge for today
+  const existing = getTodayChallenge();
+  if (existing) return existing;
+
+  SQL.run(
+    'INSERT INTO hacking_challenges (module_number, challenge_date, difficulty, prompt, hints, solution) VALUES (?, ?, ?, ?, ?, ?)',
+    [moduleNumber, today, difficulty, prompt, JSON.stringify(hints || []), solution]
+  );
+  db._persist();
+
+  return getTodayChallenge();
+}
+
+function submitChallengeAnswer(challengeId, answer, score) {
+  const SQL = db._getDb();
+
+  SQL.run('UPDATE hacking_challenges SET user_answer = ?, score = ?, status = ?, completed_at = ? WHERE id = ?',
+    [answer, score, 'completed', new Date().toISOString(), challengeId]);
+
+  // Update progress
+  SQL.run(`UPDATE hacking_progress SET
+    total_challenges_completed = total_challenges_completed + 1,
+    current_streak = current_streak + 1,
+    longest_streak = MAX(longest_streak, current_streak + 1),
+    total_points = total_points + ?,
+    level = CASE
+      WHEN total_points + ? >= 1000 THEN 'Elite Hunter'
+      WHEN total_points + ? >= 600 THEN 'Pro Hacker'
+      WHEN total_points + ? >= 300 THEN 'Hacker'
+      WHEN total_points + ? >= 100 THEN 'Apprentice'
+      ELSE 'Script Kiddie'
+    END,
+    updated_at = ?
+    WHERE id = 1`,
+    [score, score, score, score, score, new Date().toISOString()]);
+
+  db._persist();
+  return getProgress();
+}
+
+// Check and reset streak if user missed yesterday
+function checkStreak() {
+  const SQL = db._getDb();
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const stmt = SQL.prepare('SELECT COUNT(*) as count FROM hacking_challenges WHERE challenge_date = ? AND status = ?');
+  stmt.bind([yesterday, 'completed']);
+  stmt.step();
+  const { count } = stmt.getAsObject();
+  stmt.free();
+
+  if (count === 0) {
+    SQL.run('UPDATE hacking_progress SET current_streak = 0, updated_at = ? WHERE id = 1',
+      [new Date().toISOString()]);
+    db._persist();
+  }
+}
+
+// --- Progress ---
+
+function getProgress() {
+  const SQL = db._getDb();
+  const stmt = SQL.prepare('SELECT * FROM hacking_progress WHERE id = 1');
+  stmt.step();
+  const row = stmt.getAsObject();
+  stmt.free();
+  return row;
+}
+
+// --- Bounties ---
+
+function getBounties() {
+  const SQL = db._getDb();
+  const stmt = SQL.prepare('SELECT * FROM hacking_bounties ORDER BY created_at DESC');
+  const rows = [];
+  while (stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+  return rows;
+}
+
+function addBounty(data) {
+  const SQL = db._getDb();
+  SQL.run(
+    'INSERT INTO hacking_bounties (program_name, platform, url, scope_notes, payout_range, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [data.program_name, data.platform || 'other', data.url || null, data.scope_notes || null,
+     data.payout_range || null, data.status || 'watching', data.notes || null]
+  );
+  db._persist();
+  const stmt = SQL.prepare('SELECT * FROM hacking_bounties ORDER BY id DESC LIMIT 1');
+  stmt.step();
+  const row = stmt.getAsObject();
+  stmt.free();
+  return row;
+}
+
+function updateBounty(id, updates) {
+  const SQL = db._getDb();
+  const allowed = ['program_name', 'platform', 'url', 'scope_notes', 'payout_range', 'status', 'submission_date', 'payout_amount', 'notes'];
+  const fields = [];
+  const values = [];
+  for (const [key, val] of Object.entries(updates)) {
+    if (allowed.includes(key)) {
+      fields.push(`${key} = ?`);
+      values.push(val);
+    }
+  }
+  if (fields.length === 0) return null;
+  fields.push('updated_at = CURRENT_TIMESTAMP');
+  values.push(id);
+  SQL.run(`UPDATE hacking_bounties SET ${fields.join(', ')} WHERE id = ?`, values);
+  db._persist();
+
+  const stmt = SQL.prepare('SELECT * FROM hacking_bounties WHERE id = ?');
+  stmt.bind([id]);
+  if (!stmt.step()) { stmt.free(); return null; }
+  const row = stmt.getAsObject();
+  stmt.free();
+  return row;
+}
+
+// --- Dashboard ---
+
+function getDashboard() {
+  const progress = getProgress();
+  const curriculum = getCurriculum();
+  const bounties = getBounties();
+  const todayChallenge = getTodayChallenge();
+
+  const totalEarnings = bounties
+    .filter(b => b.payout_amount)
+    .reduce((sum, b) => sum + b.payout_amount, 0);
+
+  const activeBounties = bounties.filter(b => b.status === 'active').length;
+  const submittedBounties = bounties.filter(b => ['submitted', 'accepted', 'rejected'].includes(b.status)).length;
+  const acceptedBounties = bounties.filter(b => b.status === 'accepted').length;
+
+  return {
+    progress,
+    curriculum,
+    today_challenge: todayChallenge ? { id: todayChallenge.id, status: todayChallenge.status, difficulty: todayChallenge.difficulty } : null,
+    bounty_stats: {
+      total_earnings: totalEarnings,
+      active: activeBounties,
+      submitted: submittedBounties,
+      accepted: acceptedBounties,
+      win_rate: submittedBounties > 0 ? Math.round((acceptedBounties / submittedBounties) * 100) : 0,
+    },
+  };
+}
+
+module.exports = {
+  getCurriculum,
+  getLessons,
+  completeLesson,
+  getTodayChallenge,
+  saveDailyChallenge,
+  submitChallengeAnswer,
+  checkStreak,
+  getProgress,
+  getBounties,
+  addBounty,
+  updateBounty,
+  getDashboard,
+};

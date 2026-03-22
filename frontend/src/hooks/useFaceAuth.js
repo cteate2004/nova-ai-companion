@@ -1,0 +1,104 @@
+import { useState, useRef, useCallback } from 'react';
+import * as faceapi from '@vladmandic/face-api';
+
+const MODEL_URL = '/models';
+const MATCH_THRESHOLD = 0.5;
+const STORAGE_KEY_DESCRIPTORS = 'nova_face_descriptors';
+const STORAGE_KEY_ENABLED = 'nova_face_enabled';
+
+export default function useFaceAuth() {
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
+
+  const isEnrolled = useCallback(() => {
+    return localStorage.getItem(STORAGE_KEY_ENABLED) === 'true'
+      && localStorage.getItem(STORAGE_KEY_DESCRIPTORS) !== null;
+  }, []);
+
+  const loadModels = useCallback(async () => {
+    if (modelsLoaded || loadingRef.current) return true;
+    loadingRef.current = true;
+    setLoading(true);
+    try {
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+      setModelsLoaded(true);
+      return true;
+    } catch (err) {
+      console.error('[useFaceAuth] model load failed:', err);
+      return false;
+    } finally {
+      loadingRef.current = false;
+      setLoading(false);
+    }
+  }, [modelsLoaded]);
+
+  const detectFace = useCallback(async (videoEl) => {
+    const detection = await faceapi
+      .detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 }))
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+    return detection || null;
+  }, []);
+
+  const matchDescriptor = useCallback((liveDescriptor) => {
+    const stored = localStorage.getItem(STORAGE_KEY_DESCRIPTORS);
+    if (!stored) return false;
+    const descriptors = JSON.parse(stored);
+    for (const arr of descriptors) {
+      const dist = faceapi.euclideanDistance(liveDescriptor, arr);
+      if (dist < MATCH_THRESHOLD) return true;
+    }
+    return false;
+  }, []);
+
+  const verifyFace = useCallback(async (videoEl) => {
+    const detection = await detectFace(videoEl);
+    if (!detection) return { success: false, error: 'No face detected' };
+    const matched = matchDescriptor(detection.descriptor);
+    return { success: matched, error: matched ? null : 'Face did not match' };
+  }, [detectFace, matchDescriptor]);
+
+  const captureDescriptor = useCallback(async (videoEl) => {
+    const detection = await detectFace(videoEl);
+    if (!detection) return { descriptor: null, error: 'No face detected — try better lighting' };
+    if (detection.detection.score < 0.6) {
+      return { descriptor: null, error: 'Low confidence — move closer or improve lighting' };
+    }
+    return { descriptor: Array.from(detection.descriptor), error: null };
+  }, [detectFace]);
+
+  const saveEnrollment = useCallback((descriptors) => {
+    localStorage.setItem(STORAGE_KEY_DESCRIPTORS, JSON.stringify(descriptors));
+    localStorage.setItem(STORAGE_KEY_ENABLED, 'true');
+  }, []);
+
+  const clearEnrollment = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY_DESCRIPTORS);
+    localStorage.setItem(STORAGE_KEY_ENABLED, 'false');
+  }, []);
+
+  const checkCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      stream.getTracks().forEach(t => t.stop());
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  return {
+    isEnrolled,
+    loadModels,
+    modelsLoaded,
+    loading,
+    verifyFace,
+    captureDescriptor,
+    saveEnrollment,
+    clearEnrollment,
+    checkCamera,
+  };
+}

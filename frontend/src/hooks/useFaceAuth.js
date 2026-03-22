@@ -54,7 +54,7 @@ export default function useFaceAuth() {
     try {
       const detection = await Promise.race([
         faceapi
-          .detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 }))
+          .detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.3 }))
           .withFaceLandmarks()
           .withFaceDescriptor(),
         timeout,
@@ -87,7 +87,7 @@ export default function useFaceAuth() {
   const captureDescriptor = useCallback(async (videoEl) => {
     const detection = await detectFace(videoEl);
     if (!detection) return { descriptor: null, error: 'No face detected — try better lighting' };
-    if (detection.detection.score < 0.6) {
+    if (detection.detection.score < 0.4) {
       return { descriptor: null, error: 'Low confidence — move closer or improve lighting' };
     }
     return { descriptor: Array.from(detection.descriptor), error: null };

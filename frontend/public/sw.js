@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nova-v2';
+const CACHE_NAME = 'nova-v3';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/nova-face.jpg',
@@ -26,6 +26,20 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => caches.match('/'))
+    );
+    return;
+  }
+  // Face-api model files: cache-first with runtime caching
+  if (event.request.url.includes('/models/')) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        });
+      })
     );
     return;
   }

@@ -653,95 +653,96 @@ function buildSystemPrompt(memories, timeInfo) {
   return prompt;
 }
 
-// Chat with tool use support
-// First tries streaming. If Claude wants to use tools, falls back to non-streaming tool loop,
-// then streams the final response.
+// Chat with tool use support — fully streaming with multi-round tool loops.
+// Streams text to the user immediately while handling tool calls in the background.
+const MAX_TOOL_ROUNDS = 3;
+
 async function* streamChat(messages, memories, imageData, timeInfo) {
   const systemPrompt = buildSystemPrompt(memories, timeInfo);
   const googleConnected = isAuthorized();
-
-  // Always include flight/rental tools; add Google tools only if authorized
   const tools = [...ALWAYS_TOOLS, ...(googleConnected ? GOOGLE_TOOLS : [])];
 
-  // If there's an image, replace the last user message content with multimodal content
-  const apiMessages = messages.map((msg, i) => {
+  // Build messages with optional image on the last user message
+  let apiMessages = messages.map((msg, i) => {
     if (imageData && i === messages.length - 1 && msg.role === 'user') {
-      const content = [
-        {
-          type: 'image',
-          source: {
-            type: 'base64',
-            media_type: imageData.mediaType,
-            data: imageData.base64,
-          },
-        },
-        { type: 'text', text: msg.content },
-      ];
-      return { role: 'user', content };
+      return {
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: imageData.mediaType, data: imageData.base64 } },
+          { type: 'text', text: msg.content },
+        ],
+      };
     }
     return msg;
   });
 
-  // First call — may stream text or request tools
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
-    system: systemPrompt,
-    messages: apiMessages,
-    tools: tools.length > 0 ? tools : undefined,
-  });
+  // System prompt with cache_control for prompt caching
+  const systemBlocks = [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }];
 
-  // Check if Claude wants to use tools
-  if (response.stop_reason === 'tool_use') {
-    // Collect all tool use blocks
-    const toolUseBlocks = response.content.filter(b => b.type === 'tool_use');
-    const textBlocks = response.content.filter(b => b.type === 'text');
-
-    // Yield any text before tool calls
-    for (const block of textBlocks) {
-      if (block.text) yield block.text;
-    }
-
-    // Execute all tool calls
-    const toolResults = [];
-    for (const toolUse of toolUseBlocks) {
-      console.log(`[Tool] Calling ${toolUse.name}:`, JSON.stringify(toolUse.input).slice(0, 100));
-      const result = await executeTool(toolUse.name, toolUse.input);
-      console.log(`[Tool] ${toolUse.name} result:`, JSON.stringify(result).slice(0, 200));
-      toolResults.push({
-        type: 'tool_result',
-        tool_use_id: toolUse.id,
-        content: JSON.stringify(result),
-      });
-    }
-
-    // Send tool results back to Claude and stream the final response
-    const finalMessages = [
-      ...messages,
-      { role: 'assistant', content: response.content },
-      { role: 'user', content: toolResults },
-    ];
-
-    const finalStream = client.messages.stream({
+  for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
+    // Stream every round — even the first call
+    const stream = client.messages.stream({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
-      system: systemPrompt,
-      messages: finalMessages,
+      system: systemBlocks,
+      messages: apiMessages,
       tools: tools.length > 0 ? tools : undefined,
     });
 
-    for await (const event of finalStream) {
-      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-        yield event.delta.text;
+    // Collect content blocks while streaming text to the user
+    const contentBlocks = [];
+    let currentBlock = null;
+
+    for await (const event of stream) {
+      switch (event.type) {
+        case 'content_block_start':
+          if (event.content_block.type === 'text') {
+            currentBlock = { type: 'text', text: '' };
+          } else if (event.content_block.type === 'tool_use') {
+            currentBlock = { type: 'tool_use', id: event.content_block.id, name: event.content_block.name, input: '' };
+          }
+          break;
+
+        case 'content_block_delta':
+          if (event.delta.type === 'text_delta') {
+            yield event.delta.text;
+            if (currentBlock && currentBlock.type === 'text') currentBlock.text += event.delta.text;
+          } else if (event.delta.type === 'input_json_delta' && currentBlock && currentBlock.type === 'tool_use') {
+            currentBlock.input += event.delta.partial_json;
+          }
+          break;
+
+        case 'content_block_stop':
+          if (currentBlock) {
+            if (currentBlock.type === 'tool_use') {
+              try { currentBlock.input = JSON.parse(currentBlock.input); } catch { currentBlock.input = {}; }
+            }
+            contentBlocks.push(currentBlock);
+            currentBlock = null;
+          }
+          break;
       }
     }
-  } else {
-    // No tool use — yield text directly
-    for (const block of response.content) {
-      if (block.type === 'text' && block.text) {
-        yield block.text;
-      }
+
+    // Check if any tool calls were made
+    const toolBlocks = contentBlocks.filter(b => b.type === 'tool_use');
+    if (toolBlocks.length === 0) break; // No tools — we're done
+
+    // Execute tool calls
+    const toolResults = [];
+    for (const toolUse of toolBlocks) {
+      console.log(`[Tool] Calling ${toolUse.name}:`, JSON.stringify(toolUse.input).slice(0, 100));
+      const result = await executeTool(toolUse.name, toolUse.input);
+      console.log(`[Tool] ${toolUse.name} result:`, JSON.stringify(result).slice(0, 200));
+      toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: JSON.stringify(result) });
     }
+
+    // Build next round messages with tool results
+    apiMessages = [
+      ...apiMessages,
+      { role: 'assistant', content: contentBlocks },
+      { role: 'user', content: toolResults },
+    ];
   }
 }
 

@@ -3,18 +3,26 @@ const db = require('./database');
 
 const client = new Anthropic();
 
-const EXTRACTION_PROMPT = `Extract key facts about the user from these recent messages. Return ONLY a JSON array of objects with "fact" and "category" fields.
+const EXTRACTION_PROMPT = `You are Nova's memory system. Nova is the user's AI girlfriend. Extract key facts about the user from these recent messages that Nova should remember about her boyfriend.
 
-Categories: personal, preference, work, interest, event, joke
+Return ONLY a JSON array of objects with "fact" and "category" fields.
 
-Only include NEW information. Do not repeat facts already known.
+Categories:
+- personal: name, age, location, family, friends, pets, life details
+- preference: likes, dislikes, favorites (food, music, movies, etc.)
+- work: job, projects, coworkers, work schedule, career goals
+- interest: hobbies, passions, things they geek out about
+- relationship: things they like Nova to do, how they want to be treated, inside jokes
+- event: upcoming plans, important dates, things they mentioned happening
+
+Only include NEW information not already known. Be specific — "likes pizza" is better than "talked about food".
 
 Already known facts:
 `;
 
 async function shouldExtract(sessionId) {
   const count = db.getMessageCount(sessionId);
-  return count > 0 && count % 20 === 0;
+  return count > 0 && count % 5 === 0;
 }
 
 async function extractMemories(sessionId) {
@@ -30,7 +38,7 @@ async function extractMemories(sessionId) {
     .join('\n');
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 512,
     messages: [{
       role: 'user',

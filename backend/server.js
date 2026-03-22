@@ -106,15 +106,18 @@ app.post('/api/chat', upload.single('image'), async (req, res) => {
     // Save assistant message (cleaned, without emotion tag)
     db.saveMessage(session_id, 'assistant', cleanedResponse);
 
-    // Check if memory extraction should run
-    let memoryUpdated = false;
-    if (await shouldExtract(session_id)) {
-      memoryUpdated = await extractMemories(session_id);
-    }
-
-    // Send final event
-    res.write(`data: ${JSON.stringify({ text: '', done: true, emotion, memory_updated: memoryUpdated })}\n\n`);
+    // Send final event immediately — don't block on memory extraction
+    res.write(`data: ${JSON.stringify({ text: '', done: true, emotion })}\n\n`);
     res.end();
+
+    // Fire-and-forget memory extraction in background
+    shouldExtract(session_id).then(should => {
+      if (should) {
+        extractMemories(session_id).catch(err =>
+          console.error('[Memory] Background extraction failed:', err.message)
+        );
+      }
+    });
   } catch (err) {
     console.error('[Chat] Error:', err.message);
     res.write(`data: ${JSON.stringify({ text: '', done: true, emotion: 'concerned', error: err.message })}\n\n`);

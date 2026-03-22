@@ -371,6 +371,12 @@ Nova has 25 tools available during conversation:
 - [x] Self-healing state sync on dashboard load — fixes unlock/completion drift
 - [x] Desktop/tablet responsive layout — centered phone-frame with glow on wide screens (768px+)
 - [x] Scheduled hacking notifications: daily challenge teaser (3am), weekly recap (Sun 10am), bounty search (Wed 12pm)
+- [x] Performance: fully streaming first API call (text appears in ~1s vs 3-5s)
+- [x] Performance: multi-round tool use loop (up to 3 rounds) with streaming throughout
+- [x] Performance: async memory extraction (non-blocking, fire-and-forget)
+- [x] Performance: Haiku for memory extraction (faster, cheaper than Sonnet)
+- [x] Performance: prompt caching via cache_control on system prompt
+- [x] Chat auto-scroll fix — only scrolls if user is near bottom, instant during streaming
 
 ### Known Areas for Future Improvement
 - Claude-generated scheduled messages (currently hardcoded text)

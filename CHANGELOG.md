@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.2.1] - 2026-03-22
+
+### Performance — Streaming & Response Speed
+- **Fully Streaming First Call:** Switched from `client.messages.create()` (waits for full response) to `client.messages.stream()` for the initial API call. Text now appears in ~1 second instead of 3-5 seconds.
+- **Multi-Round Tool Loop:** Tool use now supports up to 3 streaming rounds. Each round streams text while collecting tool calls, executes tools, then streams the follow-up — all without falling back to non-streaming mode.
+- **Async Memory Extraction:** Memory extraction (every 5 messages) now runs in the background after the SSE connection closes. Previously it blocked the `done` event by 2-4 seconds while making a separate Claude API call.
+- **Haiku for Memory Extraction:** Switched memory extraction from Sonnet to Haiku 4.5 — faster and cheaper for a simple JSON extraction task.
+- **Prompt Caching:** Added `cache_control: { type: 'ephemeral' }` to the system prompt block, enabling Anthropic's prompt caching for repeated calls within a session.
+
+### Fixed
+- **Chat Auto-Scroll:** Replaced aggressive `scrollIntoView({ behavior: 'smooth' })` on every message update with smart scroll — only auto-scrolls if user is within 80px of bottom. Uses `instant` during streaming to prevent animation fighting. Fixes the issue where the chat would jump to the top while reading during streaming.
+
 ## [2.2.0] - 2026-03-22
 
 ### Added — AI Hacking Bootcamp

@@ -364,7 +364,17 @@ The Hacking Bootcamp card on the Home tab shows:
 - When all 5 lessons in a module are done, the next module unlocks
 - If progress ever gets out of sync, it self-heals when you load the dashboard
 
-## 13. Troubleshooting
+## 13. Response Speed
+
+Nova's responses stream in real-time — you'll see text appear word-by-word within about 1 second of sending a message.
+
+- **Simple chat** — text starts appearing almost immediately
+- **Tool use** (weather, grocery, tasks, etc.) — Nova may pause briefly while executing the action, then streams the response
+- **Memory** — Nova learns about you in the background every 5 messages without slowing down the conversation
+
+If responses feel slow, it's usually the internet connection between your device and the server, not Nova herself.
+
+## 14. Troubleshooting
 
 | Problem | Solution |
 |---------|----------|

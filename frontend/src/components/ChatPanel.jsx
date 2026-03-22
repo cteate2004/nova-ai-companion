@@ -33,13 +33,28 @@ export default function ChatPanel({ messages, isStreaming, onSend, emotion, onMi
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const fileInputRef = useRef(null);
   const galleryInputRef = useRef(null);
+  const userScrolledUp = useRef(false);
 
-  // Auto-scroll to bottom on new messages
+  // Track if user has manually scrolled up
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    function handleScroll() {
+      const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      userScrolledUp.current = distFromBottom > 80;
+    }
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Auto-scroll to bottom on new messages — only if user hasn't scrolled up
+  useEffect(() => {
+    if (userScrolledUp.current) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: isStreaming ? 'instant' : 'smooth' });
+  }, [messages, isStreaming]);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -78,7 +93,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, emotion, onMi
         </div>
       </div>
 
-      <div className="chat-messages">
+      <div className="chat-messages" ref={messagesContainerRef}>
         {messages.length === 0 && (
           <div style={{ color: 'var(--text-dim)', textAlign: 'center', marginTop: 40 }}>
             Say something to Nova...

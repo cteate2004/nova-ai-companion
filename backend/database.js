@@ -117,7 +117,80 @@ async function init() {
     )
   `);
 
+  // --- Hacking Bootcamp ---
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hacking_curriculum (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      module_number INTEGER NOT NULL,
+      module_name TEXT NOT NULL,
+      description TEXT NOT NULL,
+      status TEXT DEFAULT 'locked',
+      lessons_total INTEGER DEFAULT 0,
+      lessons_completed INTEGER DEFAULT 0,
+      unlocked_at TEXT,
+      completed_at TEXT
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hacking_lessons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      module_number INTEGER NOT NULL,
+      lesson_order INTEGER NOT NULL,
+      lesson_name TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      completed_at TEXT
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hacking_challenges (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      module_number INTEGER NOT NULL,
+      challenge_date TEXT NOT NULL,
+      difficulty TEXT DEFAULT 'easy',
+      prompt TEXT,
+      hints TEXT,
+      solution TEXT,
+      status TEXT DEFAULT 'pending',
+      user_answer TEXT,
+      score INTEGER,
+      completed_at TEXT
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hacking_progress (
+      id INTEGER PRIMARY KEY,
+      current_module INTEGER DEFAULT 1,
+      total_challenges_completed INTEGER DEFAULT 0,
+      current_streak INTEGER DEFAULT 0,
+      longest_streak INTEGER DEFAULT 0,
+      total_points INTEGER DEFAULT 0,
+      level TEXT DEFAULT 'Script Kiddie',
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hacking_bounties (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      program_name TEXT NOT NULL,
+      platform TEXT DEFAULT 'other',
+      url TEXT,
+      scope_notes TEXT,
+      payout_range TEXT,
+      status TEXT DEFAULT 'watching',
+      submission_date TEXT,
+      payout_amount REAL,
+      notes TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   persist();
+  seedHackingCurriculum();
   console.log('[DB] SQLite initialized');
 }
 
@@ -617,6 +690,83 @@ function deletePushSubscription(endpoint) {
   persist();
 }
 
+// --- Hacking Bootcamp Seed ---
+function seedHackingCurriculum() {
+  // Check if already seeded
+  const stmt = db.prepare('SELECT COUNT(*) as count FROM hacking_curriculum');
+  stmt.step();
+  const { count } = stmt.getAsObject();
+  stmt.free();
+  if (count > 0) return;
+
+  const modules = [
+    {
+      number: 1, name: 'LLM Basics for Hackers',
+      description: 'How tokens, system prompts, context windows, and temperature work. Understanding the attack surface.',
+      lessons: ['How Tokenization Works', 'System Prompts & Instruction Hierarchy', 'Context Windows & Memory', 'Temperature & Sampling', 'The LLM Attack Surface'],
+    },
+    {
+      number: 2, name: 'Direct Prompt Injection',
+      description: 'Overriding system instructions, role-play exploits, encoding tricks, delimiter confusion.',
+      lessons: ['Instruction Override Basics', 'Role-Play & Persona Exploits', 'Encoding Tricks (Base64, ROT13)', 'Delimiter Confusion', 'Crafting Extraction Payloads'],
+    },
+    {
+      number: 3, name: 'Indirect Prompt Injection',
+      description: 'Poisoning documents, emails, and web content that agents consume.',
+      lessons: ['How Agents Process External Data', 'Hidden Instructions in Documents', 'Markdown & HTML Injection', 'Invisible Unicode Payloads', 'Tool Output Manipulation'],
+    },
+    {
+      number: 4, name: 'Agent Tool Abuse',
+      description: 'Making agents call tools with malicious parameters, chaining tool calls to escalate privileges.',
+      lessons: ['Agent Tool Architecture', 'Parameter Injection Attacks', 'Tool Chaining & Privilege Escalation', 'Exploiting Tool Description Trust', 'Real-World Agent Exploit Patterns'],
+    },
+    {
+      number: 5, name: 'RAG Poisoning & Data Exfiltration',
+      description: 'Extracting private documents from retrieval systems, manipulating embeddings.',
+      lessons: ['How RAG Systems Work', 'Document Poisoning Techniques', 'Query Manipulation for Data Leaks', 'Embedding Space Attacks', 'Membership Inference'],
+    },
+    {
+      number: 6, name: 'Multi-Agent Exploits',
+      description: 'Attacking agent-to-agent communication, trust boundaries, delegation chains.',
+      lessons: ['Multi-Agent Architectures', 'Trust Boundary Violations', 'Confused Deputy Attacks', 'Delegation Chain Manipulation', 'Inter-Agent Communication Exploits'],
+    },
+    {
+      number: 7, name: 'Guardrail Bypasses',
+      description: 'Understanding safety filters, content classifiers, output validators and their weaknesses.',
+      lessons: ['How Safety Filters Work', 'Content Classifier Internals', 'Output Validation Patterns', 'Common Bypass Techniques', 'Layered Defense Analysis'],
+    },
+    {
+      number: 8, name: 'Bug Bounty Methodology',
+      description: 'Recon for AI features, scoping agent architectures, writing quality reports, responsible disclosure.',
+      lessons: ['Recon & Scoping AI Features', 'Identifying AI Attack Surfaces', 'Writing Quality Bug Reports', 'Responsible Disclosure Process', 'Platform Tips: HackerOne, Bugcrowd, Huntr'],
+    },
+  ];
+
+  for (const mod of modules) {
+    const status = mod.number === 1 ? 'unlocked' : 'locked';
+    const unlockedAt = mod.number === 1 ? new Date().toISOString() : null;
+    db.run(
+      'INSERT INTO hacking_curriculum (module_number, module_name, description, status, lessons_total, unlocked_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [mod.number, mod.name, mod.description, status, mod.lessons.length, unlockedAt]
+    );
+    for (let i = 0; i < mod.lessons.length; i++) {
+      db.run(
+        'INSERT INTO hacking_lessons (module_number, lesson_order, lesson_name) VALUES (?, ?, ?)',
+        [mod.number, i + 1, mod.lessons[i]]
+      );
+    }
+  }
+
+  // Seed singleton progress row
+  db.run(
+    'INSERT INTO hacking_progress (id, current_module, total_challenges_completed, current_streak, longest_streak, total_points, level) VALUES (1, 1, 0, 0, 0, 0, ?)',
+    ['Script Kiddie']
+  );
+
+  persist();
+  console.log('[DB] Hacking bootcamp curriculum seeded');
+}
+
 module.exports = {
   init,
   saveMessage,
@@ -666,4 +816,9 @@ module.exports = {
   checkGroceryItemsByName,
   removeGroceryItemsByName,
   autoCategory,
+  // Hacking
+  seedHackingCurriculum,
+  // Internal helpers for modules that need direct DB access
+  _getDb: () => db,
+  _persist: persist,
 };

@@ -10,6 +10,30 @@ Nova works on both **iPhone** and **desktop/PC browsers**. On desktop, the app r
 ### PIN Login
 Enter your numeric PIN to unlock. Your session lasts 30 days.
 
+### Face ID (Two-Factor Authentication)
+Nova supports optional face-based two-factor authentication. When enabled, you must verify your face after entering your PIN.
+
+**Setting up Face ID:**
+1. Log in with your PIN
+2. Go to **Settings** → **Face ID**
+3. Tap **Set Up Face ID**
+4. Follow the guided capture — 5 photos from different angles (straight, left, right, up, down)
+5. Tap **Capture** for each pose
+6. When complete, Face ID is active
+
+**How login works with Face ID enabled:**
+1. Enter your PIN as normal
+2. Camera opens automatically after PIN is verified
+3. Nova scans your face (up to 3 attempts)
+4. If matched → you're in. If not → back to PIN to try again.
+
+**Managing Face ID:**
+- **Disable:** Settings → Face ID → toggle off (clears stored face data)
+- **Reset:** Settings → Face ID → Reset Face ID (re-enroll with new captures)
+- **No camera?** If your device has no camera or you deny permission, login falls back to PIN-only automatically.
+
+**Privacy:** Face data is stored entirely on your device (browser localStorage). It never leaves your phone — no face data is sent to the server. Face descriptors are mathematical representations (128 numbers), not photos.
+
 ### Installing as a PWA on iPhone (Recommended)
 For the best iPhone experience, add Nova to your home screen:
 1. Open the URL above in **Safari**
@@ -36,7 +60,7 @@ Nova has 6 tabs at the bottom of the screen (icon-only):
 | **Tasks** | 📋 | To-do lists, shopping lists, reminders, expenses |
 | **Grocery** | 🛒 | Grocery list with categories, print, share |
 | **Alerts** | 🔔 | Scheduled messages, special dates, mood history |
-| **Settings** | ⚙️ | Google connection, notifications, memories, location |
+| **Settings** | ⚙️ | Google connection, notifications, Face ID, memories, location |
 
 ### Home Screen
 - **Hero Avatar** — Nova's photo with emotion-based glow
@@ -217,6 +241,12 @@ Nova tracks your mood when you share how you're feeling. View the history in Ale
 - Tap **Connect Google** to authorize Gmail and Calendar access
 - After connecting, Nova can read your email and calendar
 
+### Face ID
+- Tap **Set Up Face ID** to enroll (5-step guided face capture)
+- Toggle off to disable and clear face data
+- Tap **Reset Face ID** to re-enroll
+- Face data stored locally only — never sent to server
+
 ### Push Notifications
 - Toggle to enable/disable
 - Required for: reminders, scheduled messages, "thinking of you" nudges
@@ -388,6 +418,9 @@ If responses feel slow, it's usually the internet connection between your device
 | Weather not showing | Grant location permission when prompted, or set location manually in Settings |
 | Scheduled message didn't fire | Check that: 1. Push notifications are enabled 2. Time is set correctly (uses PST timezone) 3. Message wasn't already sent today |
 | Chat not responding | Check backend is running: the server auto-starts but may need restart after VPS reboot |
+| Face ID can't detect face | Ensure good lighting, hold phone at arm's length, face the camera directly. If persistent, reset Face ID in Settings and re-enroll. |
+| Face ID not showing in login | Face ID must be set up first in Settings. If localStorage was cleared, re-enroll. |
+| Camera goes black during enrollment | Force-close the app and try again. Ensure no other app is using the camera. |
 
 ### Restarting the Backend
 ```bash

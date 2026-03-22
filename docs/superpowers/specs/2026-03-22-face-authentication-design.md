@@ -51,12 +51,12 @@ Face recognition runs in the browser. The backend handles PIN verification, toke
 ## Library Choice: @vladmandic/face-api
 
 - Actively maintained fork of face-api.js with ESM support and Safari fixes
-- TinyFaceDetector + 68-point landmarks + 128-dimensional face descriptors
-- ~6.5MB total model weight files served from `public/models/`
+- SSD Mobilenetv1 detector + 68-point landmarks + 128-dimensional face descriptors
+- ~12MB total model weight files served from `public/models/` (SSD Mobilenet + landmarks + recognition)
 - Euclidean distance matching against stored descriptors
 - Proven on mobile Safari / iPhone
-- Simplest API for single-user face matching
 - Package: `@vladmandic/face-api` (latest version)
+- Note: TinyFaceDetector was initially chosen but failed to reliably detect faces on iPhone front cameras. SSD Mobilenetv1 is heavier (~5.4MB) but far more robust.
 
 ## Login Flow
 

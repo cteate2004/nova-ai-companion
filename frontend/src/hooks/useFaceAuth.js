@@ -36,11 +36,34 @@ export default function useFaceAuth() {
   }, [modelsLoaded]);
 
   const detectFace = useCallback(async (videoEl) => {
-    const detection = await faceapi
-      .detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 }))
-      .withFaceLandmarks()
-      .withFaceDescriptor();
-    return detection || null;
+    // Ensure video is actually producing frames
+    if (!videoEl || videoEl.readyState < 2 || !videoEl.videoWidth) {
+      console.warn('[useFaceAuth] video not ready:', {
+        readyState: videoEl?.readyState,
+        videoWidth: videoEl?.videoWidth,
+        videoHeight: videoEl?.videoHeight,
+      });
+      return null;
+    }
+
+    // Timeout to prevent hanging on mobile Safari
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Detection timed out')), 10000)
+    );
+
+    try {
+      const detection = await Promise.race([
+        faceapi
+          .detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor(),
+        timeout,
+      ]);
+      return detection || null;
+    } catch (err) {
+      console.error('[useFaceAuth] detectFace error:', err);
+      return null;
+    }
   }, []);
 
   const matchDescriptor = useCallback((liveDescriptor) => {

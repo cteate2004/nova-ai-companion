@@ -51,16 +51,19 @@ export default function FaceEnrollment({ faceAuth, onComplete, onCancel }) {
     };
   }, [faceAuth]);
 
+  const [videoReady, setVideoReady] = useState(false);
+
   // Assign stream to video element once it's mounted (step >= 0)
   useEffect(() => {
     if (step >= 0 && videoRef.current && streamRef.current && !videoRef.current.srcObject) {
       videoRef.current.srcObject = streamRef.current;
+      videoRef.current.onloadeddata = () => setVideoReady(true);
       videoRef.current.play().catch(() => {});
     }
   }, [step]);
 
   const handleCapture = async () => {
-    if (capturing || !videoRef.current) return;
+    if (capturing || !videoRef.current || !videoReady) return;
     setCapturing(true);
     setError('');
 
@@ -129,9 +132,9 @@ export default function FaceEnrollment({ faceAuth, onComplete, onCancel }) {
             <button
               className="face-enroll-btn"
               onClick={handleCapture}
-              disabled={capturing}
+              disabled={capturing || !videoReady}
             >
-              {capturing ? 'Capturing...' : 'Capture'}
+              {capturing ? 'Capturing...' : !videoReady ? 'Loading camera...' : 'Capture'}
             </button>
           </>
         )}

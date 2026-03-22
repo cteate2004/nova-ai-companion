@@ -88,7 +88,7 @@ export default function FaceVerification({ onSuccess, onFailure, faceAuth }) {
 
     run();
     return () => { cancelled = true; };
-  }, [faceAuth]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const ringClass = status === 'success' ? 'face-ring success' : status === 'failed' ? 'face-ring failed' : 'face-ring scanning';
 

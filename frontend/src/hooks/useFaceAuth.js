@@ -21,7 +21,7 @@ export default function useFaceAuth() {
     loadingRef.current = true;
     setLoading(true);
     try {
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
       await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
       setModelsLoaded(true);
@@ -54,7 +54,7 @@ export default function useFaceAuth() {
     try {
       const detection = await Promise.race([
         faceapi
-          .detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.3 }))
+          .detectSingleFace(videoEl, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 }))
           .withFaceLandmarks()
           .withFaceDescriptor(),
         timeout,
@@ -113,15 +113,17 @@ export default function useFaceAuth() {
     }
   }, []);
 
-  return {
-    isEnrolled,
-    loadModels,
-    modelsLoaded,
-    loading,
-    verifyFace,
-    captureDescriptor,
-    saveEnrollment,
-    clearEnrollment,
-    checkCamera,
-  };
+  // Stable reference — prevents useEffect re-triggers in consumers
+  const api = useRef({});
+  api.current.isEnrolled = isEnrolled;
+  api.current.loadModels = loadModels;
+  api.current.modelsLoaded = modelsLoaded;
+  api.current.loading = loading;
+  api.current.verifyFace = verifyFace;
+  api.current.captureDescriptor = captureDescriptor;
+  api.current.saveEnrollment = saveEnrollment;
+  api.current.clearEnrollment = clearEnrollment;
+  api.current.checkCamera = checkCamera;
+
+  return api.current;
 }

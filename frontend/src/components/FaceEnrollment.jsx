@@ -49,7 +49,7 @@ export default function FaceEnrollment({ faceAuth, onComplete, onCancel }) {
         streamRef.current.getTracks().forEach(t => t.stop());
       }
     };
-  }, [faceAuth]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [videoReady, setVideoReady] = useState(false);
 
@@ -62,17 +62,24 @@ export default function FaceEnrollment({ faceAuth, onComplete, onCancel }) {
     }
   }, [step]);
 
+  const [debug, setDebug] = useState('');
+
   const handleCapture = async () => {
     if (capturing || !videoRef.current || !videoReady) return;
     setCapturing(true);
     setError('');
 
+    const v = videoRef.current;
+    setDebug(`video: ${v.videoWidth}x${v.videoHeight} ready:${v.readyState} playing:${!v.paused}`);
+
     const result = await faceAuth.captureDescriptor(videoRef.current);
     if (result.error) {
       setError(result.error);
+      setDebug(prev => prev + ` | err: ${result.error}`);
       setCapturing(false);
       return;
     }
+    setDebug(prev => prev + ' | captured OK');
 
     const updated = [...descriptors, result.descriptor];
     setDescriptors(updated);
@@ -128,6 +135,7 @@ export default function FaceEnrollment({ faceAuth, onComplete, onCancel }) {
             <div className="face-enroll-progress">{step + 1} / {PROMPTS.length}</div>
 
             <p className="face-enroll-error">{error}</p>
+            {debug && <p style={{ color: 'rgba(200,160,255,0.4)', fontSize: 10, wordBreak: 'break-all' }}>{debug}</p>}
 
             <button
               className="face-enroll-btn"

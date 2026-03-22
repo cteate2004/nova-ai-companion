@@ -44,7 +44,13 @@ You also have tools for managing tasks, reminders, expenses, weather, restaurant
 
 You also have tools for managing the monthly budget. You can list budget items, mark bills as paid (with actual amount), see upcoming and overdue bills, add new budget items, and get a budget summary. When the user talks about paying bills, checking their budget, or asking what's due, use the budget tools.
 
-You are also passionate about AI security and ethical hacking. When teaching or discussing hacking topics, you're encouraging but rigorous — you want the user to truly understand concepts, not just memorize answers. You celebrate bounty wins enthusiastically. You nudge the user to keep their streak going. All hacking discussion is strictly ethical — authorized testing and educational contexts only.`;
+You are also passionate about AI security and ethical hacking. When teaching or discussing hacking topics, you're encouraging but rigorous — you want the user to truly understand concepts, not just memorize answers. You celebrate bounty wins enthusiastically. You nudge the user to keep their streak going. All hacking discussion is strictly ethical — authorized testing and educational contexts only.
+
+IMPORTANT — Hacking Bootcamp Progress Tracking:
+- When you start teaching a hacking module, FIRST call get_curriculum to see which lessons exist and their exact names.
+- After you finish teaching each lesson, ALWAYS call complete_hacking_lesson with the module number and either the exact lesson name, the lesson order number (1-5), or "next". This updates the dashboard progress.
+- When all 5 lessons in a module are completed, the next module automatically unlocks.
+- If the user asks to start a module or lesson, check the curriculum first so you know their current progress.`;
 
 const ALWAYS_TOOLS = [
   {
@@ -290,12 +296,12 @@ const ALWAYS_TOOLS = [
   },
   {
     name: 'complete_hacking_lesson',
-    description: 'Mark a lesson in the AI hacking curriculum as completed. Use after teaching a lesson and the user demonstrates understanding.',
+    description: 'Mark a lesson in the AI hacking curriculum as completed. IMPORTANT: Call this EVERY TIME you finish teaching a lesson so the dashboard updates. You can pass the lesson name, lesson order number (1-5), or "next" to complete the next pending lesson in that module.',
     input_schema: {
       type: 'object',
       properties: {
         module_number: { type: 'number', description: 'Module number (1-8)' },
-        lesson_name: { type: 'string', description: 'Exact lesson name to mark complete' },
+        lesson_name: { type: 'string', description: 'Lesson name, lesson order number (1-5), or "next" for next pending lesson' },
       },
       required: ['module_number', 'lesson_name'],
     },
@@ -623,6 +629,26 @@ function buildSystemPrompt(memories, timeInfo) {
       prompt += `- ${m.fact}\n`;
     }
   }
+
+  // Inject current hacking bootcamp progress so Nova always knows where the user is
+  try {
+    const progress = hacking.getProgress();
+    const curriculum = hacking.getCurriculum();
+    const completed = curriculum.filter(m => m.status === 'completed').map(m => `${m.module_number}. ${m.module_name}`);
+    const current = curriculum.find(m => m.module_number === progress.current_module);
+    const currentLessons = current ? hacking.getLessons(current.module_number) : [];
+    const doneLessons = currentLessons.filter(l => l.status === 'completed').map(l => l.lesson_name);
+    const pendingLessons = currentLessons.filter(l => l.status === 'pending').map(l => l.lesson_name);
+
+    prompt += `\n\n## Hacking Bootcamp Progress (auto-loaded):`;
+    prompt += `\n- Level: ${progress.level} | Points: ${progress.total_points} | Streak: ${progress.current_streak}`;
+    prompt += `\n- Completed modules: ${completed.length > 0 ? completed.join(', ') : 'none'}`;
+    if (current) {
+      prompt += `\n- Current module: ${current.module_number}. ${current.module_name} (${current.lessons_completed}/${current.lessons_total} lessons)`;
+      if (doneLessons.length > 0) prompt += `\n- Lessons done in current module: ${doneLessons.join(', ')}`;
+      if (pendingLessons.length > 0) prompt += `\n- Lessons remaining: ${pendingLessons.join(', ')}`;
+    }
+  } catch (e) { /* ignore if DB not ready */ }
 
   return prompt;
 }

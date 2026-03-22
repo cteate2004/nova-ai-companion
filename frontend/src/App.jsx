@@ -127,6 +127,7 @@ function NovaApp({ authToken, onLogout }) {
             onMicToggle={handleMicToggle}
             connected={connected}
             authToken={authToken}
+            onSendMessage={sendMessage}
           />
         );
       case 'chat':

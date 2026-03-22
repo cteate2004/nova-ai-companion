@@ -1,6 +1,6 @@
 # Nova AI Companion
 
-A personal AI girlfriend assistant with voice interaction, persistent memory, push notifications, and a professional iPhone-optimized PWA interface. Nova is powered by the Claude API and runs on a VPS.
+A personal AI girlfriend assistant with voice interaction, persistent memory, push notifications, and a professional PWA interface optimized for iPhone and desktop browsers. Nova is powered by the Claude API and runs on a VPS.
 
 **Live URL:** `https://nova.srv1042999.hstgr.cloud`
 
@@ -140,8 +140,8 @@ http:
 nova/
 ├── backend/
 │   ├── server.js          # Express routes, SSE streaming, API endpoints
-│   ├── claude.js          # Claude integration, 18 tools, personality prompt
-│   ├── database.js        # SQLite (10 tables, CRUD functions)
+│   ├── claude.js          # Claude integration, 25 tools, personality prompt
+│   ├── database.js        # SQLite (15 tables, CRUD functions)
 │   ├── memory.js          # Fact extraction every 5 messages
 │   ├── scheduler.js       # Cron: reminders, scheduled messages, nudges
 │   ├── push.js            # Web Push with VAPID keys
@@ -153,6 +153,7 @@ nova/
 │   ├── calendar.js        # Calendar API wrapper
 │   ├── flights.js         # Flight search
 │   ├── rentals.js         # Rental search
+│   ├── hacking.js         # Hacking bootcamp logic (curriculum, lessons, challenges, bounties)
 │   └── data/
 │       ├── nova.db        # SQLite database
 │       ├── vapid-keys.json # Push notification keys
@@ -181,6 +182,7 @@ nova/
 │       │   ├── TaskItem.jsx      # Task list item
 │       │   ├── ReminderItem.jsx  # Reminder list item
 │       │   ├── ParticleBackground.jsx # Lavender/blue bokeh
+│       │   ├── HackingCard.jsx  # Hacking bootcamp progress card
 │       │   ├── LoginScreen.jsx   # PIN entry with branding
 │       │   ├── VoiceControl.jsx  # Mic button
 │       │   └── StatusBar.jsx     # Connection indicator
@@ -189,7 +191,7 @@ nova/
 │       │   ├── useVoice.js  # Whisper STT + EdgeTTS playback
 │       │   └── useAvatar.js # Emotion state, blink, mouth animation
 │       └── styles/
-│           └── global.css   # Midnight Luxe theme (~1400 lines)
+│           └── global.css   # Midnight Luxe theme (~1600 lines, desktop responsive)
 ├── tts/                    # EdgeTTS service (separate)
 ├── docs/
 │   ├── TRAINING.md         # User training manual
@@ -213,6 +215,11 @@ nova/
 | special_dates | Anniversaries and birthdays |
 | push_subscriptions | Web Push subscription endpoints |
 | grocery_items | Grocery list with categories |
+| hacking_curriculum | 8-module bootcamp with status/progress |
+| hacking_lessons | Individual lessons per module |
+| hacking_challenges | Daily challenges with scoring |
+| hacking_progress | User level, points, streak |
+| hacking_bounties | Bug bounty program tracking |
 
 ## API Endpoints
 
@@ -275,6 +282,15 @@ nova/
 | POST | /api/push/test | Send test notification |
 | GET | /api/weather | Weather for coordinates |
 
+### Hacking Bootcamp
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/hacking/dashboard | Full dashboard (progress, curriculum, challenge, bounties) |
+| GET | /api/hacking/curriculum | All modules with status |
+| GET | /api/hacking/progress | User level, points, streak |
+| GET | /api/hacking/challenge/today | Today's daily challenge |
+| GET | /api/hacking/bounties | Tracked bounty programs |
+
 ### Google
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -284,7 +300,7 @@ nova/
 
 ## Claude Tools
 
-Nova has 18 tools available during conversation:
+Nova has 25 tools available during conversation:
 
 | Tool | Description |
 |------|-------------|
@@ -304,6 +320,13 @@ Nova has 18 tools available during conversation:
 | check_grocery_items | Check off grocery items by name |
 | remove_grocery_items | Remove grocery items by name |
 | get_grocery_list | Get current grocery list |
+| get_curriculum | Get hacking bootcamp curriculum and lesson progress |
+| complete_hacking_lesson | Mark a lesson complete (by name, number, or "next") |
+| get_daily_challenge | Get today's hacking challenge |
+| save_daily_challenge | Save generated challenge to database |
+| submit_challenge_answer | Submit and score challenge answer |
+| track_bounty | Add or update bug bounty programs |
+| get_hacking_dashboard | Full bootcamp overview |
 
 ## Current Status (v2.0)
 
@@ -335,6 +358,19 @@ Nova has 18 tools available during conversation:
 - [x] Stale push subscription auto-cleanup (VapidPkHashMismatch)
 - [x] Scheduled message time-change fix (reset last_sent on reschedule)
 - [x] Catch-up firing for missed scheduled messages
+
+### v2.2 (2026-03-22)
+- [x] AI Hacking Bootcamp — 8-module curriculum with 5 lessons each, daily challenges, bounty tracking
+- [x] 7 new Claude tools for hacking bootcamp (get_curriculum, complete_hacking_lesson, get_daily_challenge, save_daily_challenge, submit_challenge_answer, track_bounty, get_hacking_dashboard)
+- [x] 5 new database tables (hacking_curriculum, hacking_lessons, hacking_challenges, hacking_progress, hacking_bounties)
+- [x] 5 new API endpoints for hacking dashboard, curriculum, progress, challenges, bounties
+- [x] HackingCard component on Home screen with progress, streak, curriculum map
+- [x] Clickable module chips — tap unlocked/completed modules to start lessons in chat
+- [x] Hacking progress auto-loaded into system prompt — Nova always knows your current module and progress
+- [x] Flexible lesson completion matching (exact name, lesson order number, "next", case-insensitive, partial match)
+- [x] Self-healing state sync on dashboard load — fixes unlock/completion drift
+- [x] Desktop/tablet responsive layout — centered phone-frame with glow on wide screens (768px+)
+- [x] Scheduled hacking notifications: daily challenge teaser (3am), weekly recap (Sun 10am), bounty search (Wed 12pm)
 
 ### Known Areas for Future Improvement
 - Claude-generated scheduled messages (currently hardcoded text)

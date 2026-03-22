@@ -24,12 +24,46 @@ function getLessons(moduleNumber) {
 function completeLesson(moduleNumber, lessonName) {
   const SQL = db._getDb();
 
-  // Find and mark lesson complete
-  const find = SQL.prepare('SELECT id, status FROM hacking_lessons WHERE module_number = ? AND lesson_name = ?');
+  let lesson = null;
+
+  // Try exact match first
+  const find = SQL.prepare('SELECT id, status, lesson_name FROM hacking_lessons WHERE module_number = ? AND lesson_name = ?');
   find.bind([moduleNumber, lessonName]);
-  if (!find.step()) { find.free(); return { error: 'Lesson not found' }; }
-  const lesson = find.getAsObject();
+  if (find.step()) lesson = find.getAsObject();
   find.free();
+
+  // Try by lesson_order if lessonName is a number
+  if (!lesson && /^\d+$/.test(String(lessonName))) {
+    const byOrder = SQL.prepare('SELECT id, status, lesson_name FROM hacking_lessons WHERE module_number = ? AND lesson_order = ?');
+    byOrder.bind([moduleNumber, parseInt(lessonName)]);
+    if (byOrder.step()) lesson = byOrder.getAsObject();
+    byOrder.free();
+  }
+
+  // Try case-insensitive / partial match
+  if (!lesson) {
+    const all = SQL.prepare('SELECT id, status, lesson_name FROM hacking_lessons WHERE module_number = ? ORDER BY lesson_order');
+    all.bind([moduleNumber]);
+    const candidates = [];
+    while (all.step()) candidates.push(all.getAsObject());
+    all.free();
+
+    const needle = lessonName.toLowerCase().trim();
+    // Try case-insensitive exact match
+    lesson = candidates.find(c => c.lesson_name.toLowerCase() === needle);
+    // Try substring match
+    if (!lesson) lesson = candidates.find(c => c.lesson_name.toLowerCase().includes(needle) || needle.includes(c.lesson_name.toLowerCase()));
+  }
+
+  // Try completing next pending lesson in module if "next" is passed
+  if (!lesson && lessonName.toLowerCase() === 'next') {
+    const next = SQL.prepare('SELECT id, status, lesson_name FROM hacking_lessons WHERE module_number = ? AND status = ? ORDER BY lesson_order LIMIT 1');
+    next.bind([moduleNumber, 'pending']);
+    if (next.step()) lesson = next.getAsObject();
+    next.free();
+  }
+
+  if (!lesson) return { error: 'Lesson not found', hint: 'Use get_curriculum to see exact lesson names, or pass lesson_order number (1-5), or "next" for the next pending lesson' };
 
   if (lesson.status === 'completed') {
     return { error: 'Lesson already completed' };
@@ -49,23 +83,44 @@ function completeLesson(moduleNumber, lessonName) {
   const mod = check.getAsObject();
   check.free();
 
+  // Ensure this module (and all prior modules) are unlocked
+  const now = new Date().toISOString();
+  SQL.run('UPDATE hacking_curriculum SET status = ?, unlocked_at = COALESCE(unlocked_at, ?) WHERE module_number <= ? AND status = ?',
+    ['unlocked', now, moduleNumber, 'locked']);
+
   let moduleCompleted = false;
   if (mod.lessons_completed >= mod.lessons_total) {
     SQL.run('UPDATE hacking_curriculum SET status = ?, completed_at = ? WHERE module_number = ?',
-      ['completed', new Date().toISOString(), moduleNumber]);
+      ['completed', now, moduleNumber]);
+
+    // Also mark all prior modules as completed if they have all lessons done
+    SQL.run(`UPDATE hacking_curriculum SET status = 'completed', completed_at = COALESCE(completed_at, ?)
+      WHERE module_number < ? AND lessons_completed >= lessons_total AND status != 'completed'`,
+      [now, moduleNumber]);
 
     // Unlock next module
     const nextMod = moduleNumber + 1;
     if (nextMod <= 8) {
-      SQL.run('UPDATE hacking_curriculum SET status = ?, unlocked_at = ? WHERE module_number = ? AND status = ?',
-        ['unlocked', new Date().toISOString(), nextMod, 'locked']);
+      SQL.run('UPDATE hacking_curriculum SET status = ?, unlocked_at = COALESCE(unlocked_at, ?) WHERE module_number = ? AND status = ?',
+        ['unlocked', now, nextMod, 'locked']);
     }
 
-    // Update progress current_module
+    // Update progress current_module to the highest incomplete module
+    const highest = SQL.prepare('SELECT MIN(module_number) as next FROM hacking_curriculum WHERE status != ?');
+    highest.bind(['completed']);
+    highest.step();
+    const nextActive = highest.getAsObject();
+    highest.free();
+    const newCurrent = nextActive.next || 8;
+
     SQL.run('UPDATE hacking_progress SET current_module = ?, updated_at = ? WHERE id = 1',
-      [Math.min(nextMod, 8), new Date().toISOString()]);
+      [newCurrent, now]);
 
     moduleCompleted = true;
+  } else {
+    // Even if module not fully complete, update current_module to at least this module
+    SQL.run('UPDATE hacking_progress SET current_module = MAX(current_module, ?), updated_at = ? WHERE id = 1',
+      [moduleNumber, now]);
   }
 
   db._persist();
@@ -222,7 +277,54 @@ function updateBounty(id, updates) {
 
 // --- Dashboard ---
 
+function syncState() {
+  const SQL = db._getDb();
+  const now = new Date().toISOString();
+
+  // Sync lessons_completed counts from actual lesson records
+  const mods = SQL.prepare('SELECT module_number FROM hacking_curriculum ORDER BY module_number');
+  while (mods.step()) {
+    const { module_number } = mods.getAsObject();
+    const count = SQL.prepare('SELECT COUNT(*) as c FROM hacking_lessons WHERE module_number = ? AND status = ?');
+    count.bind([module_number, 'completed']);
+    count.step();
+    const { c } = count.getAsObject();
+    count.free();
+    SQL.run('UPDATE hacking_curriculum SET lessons_completed = ? WHERE module_number = ?', [c, module_number]);
+  }
+  mods.free();
+
+  // Mark modules completed if all lessons done
+  SQL.run(`UPDATE hacking_curriculum SET status = 'completed', completed_at = COALESCE(completed_at, ?)
+    WHERE lessons_completed >= lessons_total AND lessons_completed > 0 AND status != 'completed'`, [now]);
+
+  // Unlock all modules up to the highest one with progress, plus the next one
+  const withProgress = SQL.prepare('SELECT MAX(module_number) as m FROM hacking_lessons WHERE status = ?');
+  withProgress.bind(['completed']);
+  withProgress.step();
+  const highest = withProgress.getAsObject();
+  withProgress.free();
+
+  if (highest.m) {
+    // Unlock everything up to and including the module with progress, plus the next one
+    const unlockUpTo = Math.min(highest.m + 1, 8);
+    SQL.run(`UPDATE hacking_curriculum SET status = 'unlocked', unlocked_at = COALESCE(unlocked_at, ?)
+      WHERE module_number <= ? AND status = 'locked'`, [now, unlockUpTo]);
+
+    // Re-mark completed ones (the unlock above may have overwritten)
+    SQL.run(`UPDATE hacking_curriculum SET status = 'completed'
+      WHERE lessons_completed >= lessons_total AND lessons_completed > 0`);
+
+    // Update current_module
+    SQL.run('UPDATE hacking_progress SET current_module = MAX(current_module, ?), updated_at = ? WHERE id = 1',
+      [highest.m, now]);
+  }
+
+  db._persist();
+}
+
 function getDashboard() {
+  syncState();
   const progress = getProgress();
   const curriculum = getCurriculum();
   const bounties = getBounties();

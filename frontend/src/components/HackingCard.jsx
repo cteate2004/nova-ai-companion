@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function HackingCard({ authToken, onTabChange }) {
+export default function HackingCard({ authToken, onTabChange, onSendMessage }) {
   const [dashboard, setDashboard] = useState(null);
   const [expanded, setExpanded] = useState(false);
 
@@ -32,7 +32,11 @@ export default function HackingCard({ authToken, onTabChange }) {
         <span className="hacking-streak">{progress.current_streak > 0 ? `\u{1F525} ${progress.current_streak}` : ''}</span>
       </div>
 
-      <div className="hacking-module-info">
+      <div className="hacking-module-info" onPointerDown={(e) => {
+        e.stopPropagation();
+        onSendMessage(`Let's start hacking module ${progress.current_module}: ${currentMod?.module_name}`);
+        onTabChange('chat');
+      }}>
         <span className="hacking-module-name">Module {progress.current_module}: {currentMod?.module_name}</span>
         <div className="hacking-progress-bar">
           <div className="hacking-progress-fill" style={{ width: `${progressPct}%` }} />
@@ -65,7 +69,16 @@ export default function HackingCard({ authToken, onTabChange }) {
         <div className="hacking-expanded">
           <div className="hacking-curriculum-map">
             {curriculum.map(mod => (
-              <div key={mod.module_number} className={`hacking-module-chip ${mod.status}`}>
+              <div
+                key={mod.module_number}
+                className={`hacking-module-chip ${mod.status}`}
+                onPointerDown={(e) => {
+                  if (mod.status === 'locked') return;
+                  e.stopPropagation();
+                  onSendMessage(`Let's start hacking module ${mod.module_number}: ${mod.module_name}`);
+                  onTabChange('chat');
+                }}
+              >
                 <span className="hacking-module-num">{mod.module_number}</span>
                 <span className="hacking-module-label">{mod.module_name}</span>
                 {mod.status === 'completed' && <span className="hacking-check">{'\u2713'}</span>}

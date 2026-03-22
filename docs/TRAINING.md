@@ -3,13 +3,15 @@
 ## 1. Accessing Nova
 
 ### URL
-Open in Safari on your iPhone: **https://nova.srv1042999.hstgr.cloud**
+Open in any browser: **https://nova.srv1042999.hstgr.cloud**
+
+Nova works on both **iPhone** and **desktop/PC browsers**. On desktop, the app renders in a centered phone-style frame with a subtle glow effect.
 
 ### PIN Login
 Enter your numeric PIN to unlock. Your session lasts 30 days.
 
-### Installing as a PWA (Recommended)
-For the best experience, add Nova to your iPhone home screen:
+### Installing as a PWA on iPhone (Recommended)
+For the best iPhone experience, add Nova to your home screen:
 1. Open the URL above in **Safari**
 2. Tap the **Share button** (square with upward arrow)
 3. Scroll down and tap **Add to Home Screen**
@@ -19,6 +21,9 @@ This gives you:
 - Full-screen mode (no Safari browser chrome)
 - Push notifications for reminders and scheduled messages
 - App icon on your home screen
+
+### Desktop Browser
+Just visit the URL in Chrome, Edge, Firefox, or Safari on your PC/Mac. The UI is fully functional — chat, voice, tasks, grocery, hacking bootcamp, and all features work the same.
 
 ## 2. Navigation
 
@@ -347,6 +352,17 @@ The Hacking Bootcamp card on the Home tab shows:
 - Points, challenges completed, and earnings
 - Streak counter (consecutive days of challenges)
 - Tap to expand the full curriculum map with module statuses
+
+### Starting a Lesson
+- **Tap the current module info** (progress bar area) on the hacking card to jump to chat and start learning
+- **Expand the curriculum map** and tap any unlocked or completed module to start it
+- Locked modules (greyed out with 🔒) can't be tapped — complete the current module first
+- Nova automatically knows your progress — she won't re-teach completed lessons unless you ask
+
+### Progress Tracking
+- Nova marks lessons complete as you learn them — your dashboard updates automatically
+- When all 5 lessons in a module are done, the next module unlocks
+- If progress ever gets out of sync, it self-heals when you load the dashboard
 
 ## 13. Troubleshooting
 

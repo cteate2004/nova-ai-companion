@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.2.0] - 2026-03-22
+
+### Added — AI Hacking Bootcamp
+- **8-Module Curriculum:** Progressive AI security training from LLM basics to bug bounty methodology, with 5 lessons per module.
+- **Daily Challenges:** Auto-generated challenges scaled to current module. Points, scoring, streak tracking, and rank progression (Script Kiddie → Elite Hunter).
+- **Bounty Tracking:** Weekly automated search for new AI bug bounty programs. Track programs, submissions, and payouts.
+- **HackingCard Component:** Home screen dashboard showing current module progress, points, challenges completed, earnings, and streak counter. Tap to expand full curriculum map.
+- **Clickable Module Chips:** Tap any unlocked/completed module to jump to chat and start the lesson. Locked modules stay greyed out.
+- **7 New Claude Tools:** `get_curriculum`, `complete_hacking_lesson`, `get_daily_challenge`, `save_daily_challenge`, `submit_challenge_answer`, `track_bounty`, `get_hacking_dashboard`.
+- **5 New Database Tables:** `hacking_curriculum`, `hacking_lessons`, `hacking_challenges`, `hacking_progress`, `hacking_bounties`.
+- **5 New API Endpoints:** Dashboard, curriculum, progress, daily challenge, bounties.
+- **Scheduled Hacking Notifications:** Daily challenge teaser (3:00 AM PST), weekly progress recap (Sun 10:00 AM), weekly bounty search (Wed 12:00 PM).
+- **Auto-Loaded Progress in System Prompt:** Nova always knows your current module, completed modules, and remaining lessons without needing to call tools first.
+
+### Added — Desktop Responsive Layout
+- **Centered Phone Frame:** On screens 768px+, the app renders in a 480px-wide centered container with subtle borders.
+- **Desktop Glow Effect:** On screens 1024px+, the app frame has a purple glow shadow and rounded top corners with the particle background visible behind it.
+- **All UI Constrained:** Tab bar, screens, FAB, overlays, and login screen all constrained to the frame.
+
+### Fixed
+- **Hacking Lesson Completion:** Flexible matching now accepts exact lesson name, lesson order number (1-5), "next" keyword, case-insensitive match, or partial/substring match. Previously required exact string match which silently failed.
+- **Module Unlock Drift:** `completeLesson()` now auto-unlocks the current module and all prior modules. Previously only unlocked `moduleNumber + 1`, causing drift if lessons were completed out of order.
+- **Self-Healing State Sync:** `syncState()` runs on every dashboard load — recounts completed lessons from actual records, fixes completion status, unlocks modules that should be unlocked, and updates `current_module`.
+
+### Changed
+- **Claude Tool Description:** `complete_hacking_lesson` description updated to explain flexible matching and instruct Claude to always call it after teaching.
+- **System Prompt:** Added explicit instructions for hacking progress tracking — call `get_curriculum` before teaching, always call `complete_hacking_lesson` after each lesson.
+- **CSS:** ~200 new lines for desktop responsive media queries and hacking card styles.
+
 ## [2.1.0] - 2026-03-21
 
 ### Added — Grocery List

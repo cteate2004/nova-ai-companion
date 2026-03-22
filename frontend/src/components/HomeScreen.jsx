@@ -4,7 +4,7 @@ import WeatherCard from './WeatherCard';
 import EventCard from './EventCard';
 import HackingCard from './HackingCard';
 
-export default function HomeScreen({ emotion, isBlinking, mouthOpen, messages, onTabChange, onMicToggle, connected, authToken }) {
+export default function HomeScreen({ emotion, isBlinking, mouthOpen, messages, onTabChange, onMicToggle, connected, authToken, onSendMessage }) {
   const lastNovaMsg = [...messages].reverse().find(m => m.role === 'assistant' && m.content);
 
   return (
@@ -50,7 +50,7 @@ export default function HomeScreen({ emotion, isBlinking, mouthOpen, messages, o
       )}
       <WeatherCard authToken={authToken} />
       <EventCard authToken={authToken} />
-      <HackingCard authToken={authToken} onTabChange={onTabChange} />
+      <HackingCard authToken={authToken} onTabChange={onTabChange} onSendMessage={onSendMessage} />
     </div>
   );
 }

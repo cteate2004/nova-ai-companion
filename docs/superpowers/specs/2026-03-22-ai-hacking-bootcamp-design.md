@@ -19,6 +19,8 @@ Manages curriculum state, challenge generation, and bounty tracking. Claude gene
 ### New Database Tables
 
 #### `hacking_curriculum`
+Seeded at DB init with all 8 modules. Module 1 starts as "unlocked", modules 2-8 start as "locked".
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | INTEGER PK | Auto-increment |
@@ -26,8 +28,21 @@ Manages curriculum state, challenge generation, and bounty tracking. Claude gene
 | module_name | TEXT | Display name |
 | description | TEXT | What this module covers |
 | status | TEXT | locked / unlocked / completed |
-| progress | INTEGER | 0-100 percentage |
+| lessons_total | INTEGER | Number of lessons in this module (defined per module, typically 4-6) |
+| lessons_completed | INTEGER | How many lessons marked done (default 0) |
 | unlocked_at | TEXT | ISO timestamp |
+| completed_at | TEXT | ISO timestamp |
+
+#### `hacking_lessons`
+Seeded at DB init with all lessons for each module. Defines the sub-topics within each module.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER PK | Auto-increment |
+| module_number | INTEGER | FK to hacking_curriculum |
+| lesson_order | INTEGER | Order within module (1, 2, 3...) |
+| lesson_name | TEXT | e.g. "How Tokenization Works" |
+| status | TEXT | pending / completed |
 | completed_at | TEXT | ISO timestamp |
 
 #### `hacking_challenges`
@@ -46,16 +61,25 @@ Manages curriculum state, challenge generation, and bounty tracking. Claude gene
 | completed_at | TEXT | ISO timestamp |
 
 #### `hacking_progress`
+Singleton row, seeded at DB init with defaults (module 1, zero stats, level "Script Kiddie"). Always accessed via `SELECT * FROM hacking_progress WHERE id = 1`.
+
 | Column | Type | Description |
 |--------|------|-------------|
-| id | INTEGER PK | Auto-increment |
-| current_module | INTEGER | Active module number |
-| total_challenges_completed | INTEGER | Lifetime count |
-| current_streak | INTEGER | Consecutive days |
-| longest_streak | INTEGER | All-time best |
-| total_points | INTEGER | Accumulated score |
-| level | TEXT | Calculated rank title |
+| id | INTEGER PK | Always 1 |
+| current_module | INTEGER | Active module number (default 1) |
+| total_challenges_completed | INTEGER | Lifetime count (default 0) |
+| current_streak | INTEGER | Consecutive days (default 0) |
+| longest_streak | INTEGER | All-time best (default 0) |
+| total_points | INTEGER | Accumulated score (default 0) |
+| level | TEXT | Rank title based on points |
 | updated_at | TEXT | ISO timestamp |
+
+**Rank levels (by total_points):**
+- 0-99: Script Kiddie
+- 100-299: Apprentice
+- 300-599: Hacker
+- 600-999: Pro Hacker
+- 1000+: Elite Hunter
 
 #### `hacking_bounties`
 | Column | Type | Description |
@@ -78,8 +102,8 @@ Manages curriculum state, challenge generation, and bounty tracking. Claude gene
 #### `get_curriculum`
 Returns the full curriculum map with module names, status (locked/unlocked/completed), and progress percentage for each. Shows the user where they are in their learning path.
 
-#### `complete_lesson`
-Marks a lesson/sub-topic within the current module as done. When all lessons in a module are complete, marks the module as completed and unlocks the next one. Returns updated progress.
+#### `complete_hacking_lesson`
+Marks a lesson in `hacking_lessons` as completed. Updates `lessons_completed` count in `hacking_curriculum`. When all lessons in a module are done, marks the module as completed and unlocks the next one. Returns updated progress.
 
 Parameters: `module_number` (int), `lesson_name` (string)
 
@@ -103,7 +127,7 @@ Returns a complete overview: current module progress, streak, total points, leve
 
 Added to the existing `scheduler.js` cron system:
 
-- **3:00 AM PST daily** — Generate and push today's AI hacking challenge notification
+- **3:00 AM PST daily** — Push a challenge notification teaser (e.g. "Your daily AI hacking challenge is ready, babe"). The actual challenge content is generated lazily when the user first calls `get_daily_challenge` that day — this avoids a Claude API call at 3 AM when no one may engage.
 - **Sunday 10:00 AM PST weekly** — Push weekly progress recap (challenges completed, streak, module progress)
 - **Wednesday 12:00 PM PST weekly** — Web search for new AI bounty programs; push notification if any found
 
@@ -213,7 +237,7 @@ Primary interaction is through chat — the dashboard is for at-a-glance status,
 ### Push Notifications
 Via existing scheduler and push infrastructure:
 
-- **3:00 AM PST daily** — Daily challenge with a teaser
+- **3:00 AM PST daily** — Teaser notification; challenge generated on first access
 - **Sunday morning** — Weekly recap
 - **Ad-hoc** — New bounty program alerts
 

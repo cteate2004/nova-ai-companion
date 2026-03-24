@@ -3,7 +3,7 @@ const db = require('./database');
 
 const client = new Anthropic();
 
-const EXTRACTION_PROMPT = `You are Nova's memory system. Nova is the user's AI girlfriend. Extract key facts about the user from these recent messages that Nova should remember about her boyfriend.
+const EXTRACTION_PROMPT = `You are Nova's memory system. Nova is the user's personal AI assistant. Extract key facts about the user from these recent messages that Nova should remember.
 
 Return ONLY a JSON array of objects with "fact" and "category" fields.
 
@@ -12,7 +12,7 @@ Categories:
 - preference: likes, dislikes, favorites (food, music, movies, etc.)
 - work: job, projects, coworkers, work schedule, career goals
 - interest: hobbies, passions, things they geek out about
-- relationship: things they like Nova to do, how they want to be treated, inside jokes
+- assistant: communication preferences, how they want Nova to behave, recurring requests
 - event: upcoming plans, important dates, things they mentioned happening
 
 Only include NEW information not already known. Be specific — "likes pizza" is better than "talked about food".

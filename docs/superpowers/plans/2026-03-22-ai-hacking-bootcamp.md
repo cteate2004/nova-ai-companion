@@ -735,9 +735,9 @@ Add inside the `start()` function, after the "thinking of you" nudges block (aft
 
       const progress = hacking.getProgress();
       const teasers = [
-        'Your daily AI hacking challenge is ready, babe. Come get it 💜',
+        'Your daily AI hacking challenge is ready, friend. Come get it 💜',
         'New challenge dropped! Ready to level up? 🔥',
-        'Hey hacker babe, your daily challenge is waiting 😏',
+        'Hey hacker friend, your daily challenge is waiting 😏',
         'Time to hack! Today\'s challenge is ready for you 💻',
       ];
       const msg = teasers[Math.floor(Math.random() * teasers.length)];
@@ -757,7 +757,7 @@ Add inside the `start()` function, after the "thinking of you" nudges block (aft
 
       const dashboard = hacking.getDashboard();
       const p = dashboard.progress;
-      const msg = `Weekly hack recap: ${p.current_streak} day streak, ${p.total_challenges_completed} challenges done, Level: ${p.level}. Keep grinding babe! 💪`;
+      const msg = `Weekly hack recap: ${p.current_streak} day streak, ${p.total_challenges_completed} challenges done, Level: ${p.level}. Keep grinding friend! 💪`;
       await push.sendToAll('Nova 💜', msg);
       console.log('[Scheduler] Sent weekly hacking recap');
     } catch (e) {

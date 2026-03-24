@@ -127,7 +127,7 @@ Returns a complete overview: current module progress, streak, total points, leve
 
 Added to the existing `scheduler.js` cron system:
 
-- **3:00 AM PST daily** — Push a challenge notification teaser (e.g. "Your daily AI hacking challenge is ready, babe"). The actual challenge content is generated lazily when the user first calls `get_daily_challenge` that day — this avoids a Claude API call at 3 AM when no one may engage.
+- **3:00 AM PST daily** — Push a challenge notification teaser (e.g. "Your daily AI hacking challenge is ready"). The actual challenge content is generated lazily when the user first calls `get_daily_challenge` that day — this avoids a Claude API call at 3 AM when no one may engage.
 - **Sunday 10:00 AM PST weekly** — Push weekly progress recap (challenges completed, streak, module progress)
 - **Wednesday 12:00 PM PST weekly** — Web search for new AI bounty programs; push notification if any found
 

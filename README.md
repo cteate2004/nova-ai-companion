@@ -1,6 +1,6 @@
-# Nova AI Companion
+# Nova AI Assistant
 
-A personal AI girlfriend assistant with voice interaction, persistent memory, push notifications, and a professional PWA interface optimized for iPhone and desktop browsers. Nova is powered by the Claude API and runs on a VPS.
+A personal AI assistant with voice interaction, persistent memory, push notifications, and a professional PWA interface optimized for iPhone and desktop browsers. Nova is powered by the Claude API and runs on a VPS.
 
 **Live URL:** `https://nova.srv1042999.hstgr.cloud`
 
@@ -31,7 +31,7 @@ A personal AI girlfriend assistant with voice interaction, persistent memory, pu
 
 ### Proactive Features
 - **Scheduled Messages** — Good morning/goodnight push notifications at configurable times
-- **"Thinking of You" Nudges** — Random sweet notifications 1-5x per day during waking hours (8am-10pm PST)
+- **Check-in Nudges** — Random check-in notifications 1-5x per day during waking hours (8am-10pm PST)
 - **Reminders** — "Remind me to call mom at 5pm" → push notification when due
 - **Special Dates** — Anniversary and birthday reminders with advance notice
 - **Mood Tracking** — Logs mood from conversation, tracks patterns over time
@@ -53,7 +53,7 @@ A personal AI girlfriend assistant with voice interaction, persistent memory, pu
 ### Memory Management
 - **View Memories** — Settings > Manage Memories shows everything Nova remembers about you
 - **Edit & Delete** — Tap to edit any memory, delete individual memories
-- **Grouped by Category** — Personal, Preferences, Work, Interests, Relationship, Events
+- **Grouped by Category** — Personal, Preferences, Work, Interests, Assistant, Events
 
 ## Tech Stack
 

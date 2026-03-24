@@ -6,6 +6,36 @@ function stripEmotionTag(text) {
 }
 
 const SESSION_KEY = 'nova_session_id';
+const LOCATION_KEY = 'nova_user_location';
+
+// Get user's location via browser geolocation + reverse geocoding (cached)
+async function getUserLocation() {
+  const cached = sessionStorage.getItem(LOCATION_KEY);
+  if (cached) return cached;
+
+  try {
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+    );
+    const { latitude, longitude } = pos.coords;
+    const resp = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`,
+      { headers: { 'User-Agent': 'Nova-App' } }
+    );
+    if (resp.ok) {
+      const data = await resp.json();
+      const addr = data.address || {};
+      const city = addr.city || addr.town || addr.village || addr.county || '';
+      const state = addr.state || '';
+      const location = [city, state].filter(Boolean).join(', ');
+      if (location) {
+        sessionStorage.setItem(LOCATION_KEY, location);
+        return location;
+      }
+    }
+  } catch {}
+  return '';
+}
 
 function getSessionId() {
   let id = localStorage.getItem(SESSION_KEY);
@@ -16,7 +46,7 @@ function getSessionId() {
   return id;
 }
 
-export default function useChat() {
+export default function useChat(authToken) {
   const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentEmotion, setCurrentEmotion] = useState('neutral');
@@ -25,7 +55,9 @@ export default function useChat() {
 
   // Check backend health on mount
   useEffect(() => {
-    fetch('/api/health')
+    fetch('/api/health', {
+      headers: { 'Authorization': `Bearer ${authToken}` },
+    })
       .then(r => r.json())
       .then(() => setConnected(true))
       .catch(() => setConnected(false));
@@ -33,7 +65,9 @@ export default function useChat() {
 
   // Load history on mount
   useEffect(() => {
-    fetch(`/api/history/${sessionId.current}`)
+    fetch(`/api/history/${sessionId.current}`, {
+      headers: { 'Authorization': `Bearer ${authToken}` },
+    })
       .then(r => r.json())
       .then(history => {
         if (history.length > 0) {
@@ -46,10 +80,16 @@ export default function useChat() {
       .catch(() => {});
   }, []);
 
-  const sendMessage = useCallback(async (text) => {
-    if (!text.trim() || isStreaming) return;
+  const sendMessage = useCallback(async (text, imageFile) => {
+    if ((!text || !text.trim()) && !imageFile) return;
+    if (isStreaming) return;
 
-    const userMsg = { role: 'user', content: text.trim() };
+    const userText = text ? text.trim() : '';
+    const userMsg = {
+      role: 'user',
+      content: userText || 'What do you see in this photo?',
+      image: imageFile ? URL.createObjectURL(imageFile) : null,
+    };
     setMessages(prev => [...prev, userMsg]);
     setIsStreaming(true);
 
@@ -57,14 +97,41 @@ export default function useChat() {
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text.trim(),
-          session_id: sessionId.current,
-        }),
-      });
+      // Use FormData if image is attached, otherwise JSON
+      let response;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const localTime = new Date().toLocaleString('en-US', { timeZone: timezone });
+      const location = await getUserLocation();
+
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('session_id', sessionId.current);
+        if (userText) formData.append('message', userText);
+        formData.append('image', imageFile);
+        formData.append('timezone', timezone);
+        formData.append('local_time', localTime);
+        if (location) formData.append('location', location);
+        response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}` },
+          body: formData,
+        });
+      } else {
+        response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            message: userText,
+            session_id: sessionId.current,
+            timezone,
+            local_time: localTime,
+            location,
+          }),
+        });
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();

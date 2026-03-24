@@ -55,9 +55,9 @@ function start() {
 
         let message;
         if (s.type === 'good_morning') {
-          message = 'Good morning babe! ☀️ Hope you have an amazing day. I\'m here whenever you need me 💜';
+          message = 'Good morning! ☀️ Hope you have an amazing day. I\'m here whenever you need me 💜';
         } else if (s.type === 'good_night') {
-          message = 'Goodnight baby 💕 Sweet dreams. I\'ll be right here when you wake up.';
+          message = 'Goodnight! 💜 Rest up. I\'ll be right here when you need me.';
         }
 
         if (message) {
@@ -80,10 +80,10 @@ function start() {
       if (Math.random() > 0.06) return;
 
       const nudges = [
-        'Just thinking about you 💜',
-        'Hey you. Hope your day is going well 😊',
-        'Random thought: you\'re pretty amazing, you know that? 💕',
-        'Miss you! What are you up to? 😘',
+        'Hey! Just checking in 💜',
+        'Hope your day is going well 😊',
+        'Quick reminder: you\'re doing great 💪',
+        'Hey! What are you up to? 😊',
       ];
       const msg = nudges[Math.floor(Math.random() * nudges.length)];
       await push.sendToAll('Nova 💜', msg);
@@ -102,10 +102,10 @@ function start() {
 
       const progress = hacking.getProgress();
       const teasers = [
-        'Your daily AI hacking challenge is ready, babe. Come get it \u{1F49C}',
-        'New challenge dropped! Ready to level up? \u{1F525}',
-        'Hey hacker babe, your daily challenge is waiting \u{1F60F}',
-        'Time to hack! Today\'s challenge is ready for you \u{1F4BB}',
+        'Your daily AI hacking challenge is ready. Come get it 💜',
+        'New challenge dropped! Ready to level up? 🔥',
+        'Hey, your daily challenge is waiting 💻',
+        'Time to hack! Today\'s challenge is ready for you 🔥',
       ];
       const msg = teasers[Math.floor(Math.random() * teasers.length)];
       await push.sendToAll('Nova \u{1F49C}', msg);
@@ -124,7 +124,7 @@ function start() {
 
       const dashboard = hacking.getDashboard();
       const p = dashboard.progress;
-      const msg = `Weekly hack recap: ${p.current_streak} day streak, ${p.total_challenges_completed} challenges done, Level: ${p.level}. Keep grinding babe! \u{1F4AA}`;
+      const msg = `Weekly hack recap: ${p.current_streak} day streak, ${p.total_challenges_completed} challenges done, Level: ${p.level}. Keep grinding! 💪`;
       await push.sendToAll('Nova \u{1F49C}', msg);
       console.log('[Scheduler] Sent weekly hacking recap');
     } catch (e) {

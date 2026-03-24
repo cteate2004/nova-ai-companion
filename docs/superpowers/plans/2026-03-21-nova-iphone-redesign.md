@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Transform Nova into a professional, iPhone-optimized PWA with Midnight Luxe theme, 5-tab navigation, and expanded girlfriend assistant features.
+**Goal:** Transform Nova into a professional, iPhone-optimized PWA with Midnight Luxe theme, 5-tab navigation, and expanded personal assistant features.
 
 **Architecture:** Phased approach — foundation first (theme, bug fixes, PWA), then tab navigation and screens, then backend features, then frontend feature screens, then scheduler/push. Each phase builds on the last and produces working software.
 
@@ -1605,9 +1605,9 @@ function start() {
 
       let message;
       if (s.type === 'good_morning') {
-        message = 'Good morning babe! ☀️ Hope you have an amazing day. I\'m here whenever you need me 💜';
+        message = 'Good morning! ☀️ Hope you have an amazing day. I\'m here whenever you need me 💜';
       } else if (s.type === 'good_night') {
-        message = 'Goodnight baby 💕 Sweet dreams. I\'ll be right here when you wake up.';
+        message = 'Goodnight! 💜 Rest up. I\'ll be right here when you need me.';
       }
 
       if (message) {

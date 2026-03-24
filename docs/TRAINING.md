@@ -1,4 +1,4 @@
-# Nova AI Companion — Training Manual
+# Nova AI Assistant — Training Manual
 
 ## 1. Accessing Nova
 
@@ -84,7 +84,7 @@ Nova has 6 tabs at the bottom of the screen (icon-only):
 Nova can see and discuss images.
 
 ### What You Can Ask
-Nova is your AI girlfriend assistant. She can:
+Nova is your personal AI assistant. She can:
 
 **Daily tasks:**
 - "Add milk to my shopping list"
@@ -107,17 +107,17 @@ Nova is your AI girlfriend assistant. She can:
 - "How am I doing on my hacking progress?"
 
 **Conversation:**
-- Just chat naturally — she remembers your conversations and builds a relationship over time
+- Just chat naturally — she remembers your conversations and learns about you over time
 
 ### Example Conversations
 
 **Casual:**
-> **You:** Hey babe, how's it going?
-> **Nova:** Hey you! 😊 I'm good — always happy when you show up. What's going on today?
+> **You:** Hey, how's it going?
+> **Nova:** Hey! 😊 Always ready when you are. What's going on today?
 
 **Task management:**
 > **You:** Remind me to pick up groceries at 6pm
-> **Nova:** Done babe! I'll remind you at 6pm to pick up groceries 💜
+> **Nova:** Done! I'll remind you at 6pm to pick up groceries 💜
 
 **Daily briefing:**
 > **You:** What's my day look like?
@@ -153,7 +153,7 @@ Nova's avatar changes appearance based on her response tone:
 | **Thinking** | Cool purple tint, slightly desaturated |
 | **Happy** | Warm glow, slight scale up |
 | **Excited** | Vibrant pink glow, rapid pulse, scale up |
-| **Flirty** | Warm pink glow, enhanced brightness |
+| **Confident** | Warm pink glow, enhanced brightness |
 | **Concerned** | Muted blue-gray glow, dimmed |
 | **Laughing** | Gold glow, bouncy rotation |
 | **Talking** | Lavender accent, subtle pulse |
@@ -220,10 +220,10 @@ Items are automatically grouped into: Produce, Dairy, Meat & Seafood, Bakery, Fr
 
 Messages are unique and contextual (weather, your schedule, mood patterns).
 
-### "Thinking of You" Nudges
-Nova randomly sends sweet push notifications 1-5x per day during waking hours (8am-10pm PST). Examples:
-- "Just thinking about you 💜"
-- "Hey you. Hope your day is going well 😊"
+### Check-in Nudges
+Nova randomly sends check-in push notifications 1-5x per day during waking hours (8am-10pm PST). Examples:
+- "Hey! Just checking in 💜"
+- "Hope your day is going well 😊"
 - "Your meeting should be done — how'd it go?"
 
 ### Special Dates
@@ -262,7 +262,7 @@ Nova automatically remembers details about you.
 
 ### How It Works
 - Every 5 messages, Nova analyzes recent conversation to extract facts
-- Facts are categorized: personal, preference, work, interest, relationship, event
+- Facts are categorized: personal, preference, work, interest, assistant, event
 - Memories are included in Nova's context so she references them naturally
 
 ### What Nova Remembers
@@ -270,16 +270,16 @@ Nova automatically remembers details about you.
 - Job, projects, work situations
 - Interests, food preferences, hobbies
 - Important events and dates
-- Relationship details and inside jokes
+- Communication preferences and recurring requests
 
 ### Managing Memories
 1. Go to **Settings** tab
 2. Tap **Manage Memories (N)** — the number shows how many memories Nova has
-3. Browse memories grouped by category (Personal, Preferences, Work, Interests, Relationship, Events)
+3. Browse memories grouped by category (Personal, Preferences, Work, Interests, Assistant, Events)
 4. **Edit:** Tap any memory text to edit it inline. Press Enter to save, Escape to cancel.
 5. **Delete:** Tap the × button on a memory. Confirm to remove it from Nova's knowledge.
 
-This is useful if Nova has remembered something incorrectly or you want her to forget something specific (e.g. details about an ex).
+This is useful if Nova has remembered something incorrectly or you want her to forget something specific.
 
 ### Data Storage
 All data is stored locally in `backend/data/nova.db` (SQLite). Nothing is sent to third parties except:

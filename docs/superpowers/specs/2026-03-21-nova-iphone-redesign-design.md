@@ -2,13 +2,13 @@
 
 ## Overview
 
-Transform Nova from a desktop-first web app into a professional, iPhone-optimized PWA with a Midnight Luxe visual theme, tab-based navigation, and expanded girlfriend assistant features.
+Transform Nova from a desktop-first web app into a professional, iPhone-optimized PWA with a Midnight Luxe visual theme, tab-based navigation, and expanded personal assistant features.
 
 **Goals:**
 - Look and feel like a premium native iOS app on iPhone
 - Fix existing mobile UX issues (mic toggle bug, small text, flat black background)
 - Add functional feature screens beyond chat
-- Enable push notifications for proactive girlfriend interactions
+- Enable push notifications for proactive proactive assistant interactions
 
 ## Visual Theme: Midnight Luxe
 
@@ -110,7 +110,7 @@ Transform Nova from a desktop-first web app into a professional, iPhone-optimize
 - Smooth transition between modes (animate height + position)
 
 ### Emotion States (preserved from current)
-- neutral, listening, thinking, happy, excited, flirty, concerned, laughing, talking
+- neutral, listening, thinking, happy, excited, confident, concerned, laughing, talking
 - Each maps to: glow color, border color, brightness filter, scale, animation
 
 ## PWA Configuration
@@ -158,7 +158,7 @@ Transform Nova from a desktop-first web app into a professional, iPhone-optimize
 - DB table: `reminders` (id, message, remind_at, sent, created_at)
 - Claude tool: `create_reminder` — parses natural language time
 - Backend scheduler checks every 60s for due reminders
-- Push notification when due, with Nova's personality: "Hey babe, don't forget to call mom! 💜"
+- Push notification when due, with Nova's personality: "Hey, don't forget to call mom! 💜"
 - Visible in Tasks screen under "Reminders" section
 
 **To-Do / Shopping Lists**
@@ -232,7 +232,7 @@ Transform Nova from a desktop-first web app into a professional, iPhone-optimize
 - API: `GET/POST /api/expenses`
 - Categories: food, transport, shopping, entertainment, bills, other
 - Simple ledger view in Tasks screen
-- Nova can summarize: "You've spent $320 on food this month babe"
+- Nova can summarize: "You've spent $320 on food this month"
 
 **Quick Timers**
 - Frontend-only: JavaScript timer with state in React

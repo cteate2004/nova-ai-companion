@@ -227,7 +227,7 @@ function cleanForTTS(text) {
     if (firstListMatch) {
       const preListText = clean.substring(0, firstListMatch.index).trim();
       const summary = preListText || 'I found some results for you.';
-      clean = summary + ' Check the chat for the full details, babe.';
+      clean = summary + ' Check the chat for the full details.';
     }
   }
 
